@@ -1,4 +1,6 @@
-let turn = 0; // 0 = Blue, 1 = Red, 2 = Red, 3 = Blue... simple for now
+let turn = 0;
+const MAX_PICKS = Math.min(10, heroes.length);
+// 0 = Blue, 1 = Red, 2 = Red, 3 = Blue... simple for now
 const picks = [];
 
 window.onload = function() {
@@ -31,7 +33,7 @@ function pickHero(heroName, btnElement) {
   turn++;
 
   // Check if draft complete
-  if (picks.length === 10) {
+  if (picks.length === MAX_PICKS) {
     document.getElementById("analyzeBtn").disabled = false;
     document.getElementById("turnIndicator").innerText = "Draft Complete!";
   } else {
