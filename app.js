@@ -40,8 +40,18 @@ window.onload = () => {
   heroes.forEach(hero => {
     const btn = document.createElement("button");
     btn.className = "heroBtn";
-    btn.innerText = hero.name;
+
+    // Hero icon
+    const img = document.createElement("img");
+    img.src = hero.icon;
+    img.alt = hero.name;
+    img.width = 60; // adjust size as needed
+    img.height = 60;
+    img.style.objectFit = "cover";
+
+    btn.appendChild(img);
     btn.onclick = () => selectHero(hero.name, btn);
+
     heroGrid.appendChild(btn);
   });
 
@@ -110,7 +120,7 @@ function scoreTeam(team) {
   team.forEach(name => {
     const hero = heroes.find(h => h.name === name);
     if (hero) {
-      score += hero.early + hero.mid + hero.late;
+      score += hero.early + hero.late + hero.cc;
     }
   });
   return score;
