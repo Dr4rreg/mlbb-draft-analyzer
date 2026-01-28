@@ -37,3 +37,22 @@
 #banList li {
   color: #888;
 }
+
+#heroGrid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr); /* 10 heroes per row */
+  gap: 8px;
+  max-width: 100%;
+}
+
+.heroBtn {
+  padding: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.heroBtn.locked {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
