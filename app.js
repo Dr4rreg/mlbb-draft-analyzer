@@ -1,30 +1,19 @@
 let draftStep = 0;
-
-const draftSequence = [
-  { type: "ban", side: "Blue" }, // B1
-  { type: "ban", side: "Red" },  // R1
-  { type: "ban", side: "Blue" }, // B2
-  { type: "ban", side: "Red" },  // R2
-  { type: "ban", side: "Blue" }, // B3
-  { type: "ban", side: "Red" },  // R3
-  { type: "pick", side: "Blue" }, // B1 Pick
-  { type: "pick", side: "Red" },  // R1 Pick
-  { type: "pick", side: "Red" },  // R2 Pick
-  { type: "pick", side: "Blue" }, // B2 Pick
-  { type: "pick", side: "Blue" }, // B3 Pick
-  { type: "pick", side: "Red" },  // R3 Pick
-  { type: "ban", side: "Red" },   // R4 Ban
-  { type: "ban", side: "Blue" },  // B4 Ban
-  { type: "ban", side: "Red" },   // R5 Ban
-  { type: "ban", side: "Blue" },  // B5 Ban
-  { type: "pick", side: "Red" },  // R4 Pick
-  { type: "pick", side: "Blue" }, // B4 Pick
-  { type: "pick", side: "Blue" }, // B5 Pick
-  { type: "pick", side: "Red" }   // R5 Pick
-];
-
 const picks = [];
 const bans = [];
+
+const draftSequence = [
+  { type: "ban", side: "Blue" }, { type: "ban", side: "Red" },
+  { type: "ban", side: "Blue" }, { type: "ban", side: "Red" },
+  { type: "ban", side: "Blue" }, { type: "ban", side: "Red" },
+  { type: "pick", side: "Blue" }, { type: "pick", side: "Red" },
+  { type: "pick", side: "Red" }, { type: "pick", side: "Blue" },
+  { type: "pick", side: "Blue" }, { type: "pick", side: "Red" },
+  { type: "ban", side: "Red" }, { type: "ban", side: "Blue" },
+  { type: "ban", side: "Red" }, { type: "ban", side: "Blue" },
+  { type: "pick", side: "Red" }, { type: "pick", side: "Blue" },
+  { type: "pick", side: "Blue" }, { type: "pick", side: "Red" }
+];
 
 window.onload = function () {
   const heroGrid = document.getElementById("heroGrid");
@@ -33,7 +22,11 @@ window.onload = function () {
   heroes.forEach(h => {
     const btn = document.createElement("button");
     btn.className = "heroBtn";
-    btn.innerText = h.name;
+    btn.innerHTML = `
+      <img src="${h.icon}" alt="${h.name}" class="heroIcon"><br>
+      ${h.name}<br>
+      <span class="roleTag">${h.role}</span>
+    `;
     btn.onclick = () => selectHero(h.name, btn);
     heroGrid.appendChild(btn);
   });
@@ -44,26 +37,27 @@ window.onload = function () {
 function selectHero(heroName, btn) {
   if (draftStep >= draftSequence.length) return;
 
-  const currentStep = draftSequence[draftStep];
+  const step = draftSequence[draftStep];
 
-  // Prevent duplicate selection
-  if (bans.some(b => b.hero === heroName) || picks.some(p => p.hero === heroName)) return;
+  if (picks.some(p => p.hero === heroName) || bans.some(b => b.hero === heroName)) return;
 
-  if (currentStep.type === "ban") {
-    bans.push({ hero: heroName, side: currentStep.side });
-    document.getElementById("banList").innerHTML +=
-      `<li>${currentStep.side} banned ${heroName}</li>`;
+  if (step.type === "ban") {
+    bans.push({ hero: heroName, side: step.side });
+    const li = document.createElement("li");
+    li.innerText = `${step.side} banned ${heroName}`;
+    document.getElementById("banList").appendChild(li);
   } else {
-    picks.push({ hero: heroName, side: currentStep.side });
-    const listId = currentStep.side === "Blue" ? "bluePicks" : "redPicks";
-    document.getElementById(listId).innerHTML += `<li>${heroName}</li>`;
+    picks.push({ hero: heroName, side: step.side });
+    const listId = step.side === "Blue" ? "bluePicks" : "redPicks";
+    const li = document.createElement("li");
+    li.innerText = heroName;
+    document.getElementById(listId).appendChild(li);
   }
 
   btn.disabled = true;
   btn.classList.add("locked");
 
-  draftStep++; // move to next step
-
+  draftStep++;
   updateTurnIndicator();
 
   if (draftStep >= draftSequence.length) {
@@ -75,13 +69,11 @@ function selectHero(heroName, btn) {
 function updateTurnIndicator() {
   if (draftStep >= draftSequence.length) return;
 
-  const currentStep = draftSequence[draftStep];
-  if (currentStep.type === "ban") {
-    document.getElementById("turnIndicator").innerText =
-      `${currentStep.side} Team – Ban a hero`;
+  const step = draftSequence[draftStep];
+  if (step.type === "ban") {
+    document.getElementById("turnIndicator").innerText = `${step.side} Team – Ban a hero`;
   } else {
-    document.getElementById("turnIndicator").innerText =
-      `${currentStep.side} Team – Pick a hero`;
+    document.getElementById("turnIndicator").innerText = `${step.side} Team – Pick a hero`;
   }
 }
 
@@ -89,18 +81,13 @@ function analyzeDraft() {
   const blueHeroes = picks.filter(p => p.side === "Blue").map(p => p.hero);
   const redHeroes = picks.filter(p => p.side === "Red").map(p => p.hero);
 
-  const blueScore = scoreTeam(blueHeroes);
-  const redScore = scoreTeam(redHeroes);
+  let blueScore = scoreTeam(blueHeroes);
+  let redScore = scoreTeam(redHeroes);
 
   let result = `Blue Score: ${blueScore} | Red Score: ${redScore}<br>`;
-
-  if (blueScore > redScore) {
-    result += "Blue has better draft";
-  } else if (redScore > blueScore) {
-    result += "Red has better draft";
-  } else {
-    result += "Both drafts are evenly matched";
-  }
+  if (blueScore > redScore) result += "Blue has better draft";
+  else if (redScore > blueScore) result += "Red has better draft";
+  else result += "Both drafts are evenly matched";
 
   document.getElementById("result").innerHTML = result;
 }
