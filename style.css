@@ -1,0 +1,14 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 30px;
+}
+
+.draft-container {
+  display: flex;
+  gap: 40px;
+}
+
+select {
+  width: 200px;
+  height: 200px;
+}
