@@ -1,8 +1,22 @@
 const heroes = [
-  { name: "Ling", early: 2, late: 5, cc: 2 },
-  { name: "Balmond", early: 4, late: 3, cc: 3 },
-  { name: "Valentina", early: 4, late: 4, cc: 4 },
-  { name: "Nana", early: 3, late: 3, cc: 5 },
-  { name: "Lesley", early: 2, late: 4, cc: 2 }
-  // Add more heroes here as needed
+  { name: "Fanny", early: 4, late: 5, cc: 1 },
+  { name: "Claude", early: 3, late: 5, cc: 2 },
+  { name: "Ling", early: 5, late: 4, cc: 1 },
+  { name: "Harith", early: 4, late: 4, cc: 2 },
+  { name: "Esmeralda", early: 3, late: 5, cc: 2 },
+  { name: "Paquito", early: 4, late: 4, cc: 1 },
+  { name: "Lancelot", early: 5, late: 4, cc: 1 },
+  { name: "Gusion", early: 5, late: 4, cc: 2 },
+  { name: "Yi Sun-shin", early: 4, late: 5, cc: 2 },
+  { name: "Aldous", early: 3, late: 5, cc: 1 },
+  { name: "Chou", early: 4, late: 4, cc: 3 },
+  { name: "Tigreal", early: 2, late: 4, cc: 5 },
+  { name: "Atlas", early: 2, late: 4, cc: 5 },
+  { name: "Khufra", early: 2, late: 4, cc: 5 },
+  { name: "Baxia", early: 2, late: 3, cc: 4 },
+  { name: "Selena", early: 4, late: 4, cc: 2 },
+  { name: "Lylia", early: 5, late: 3, cc: 1 },
+  { name: "Karrie", early: 3, late: 5, cc: 1 },
+  { name: "Bruno", early: 3, late: 5, cc: 1 },
+  { name: "Beatrix", early: 3, late: 5, cc: 2 }
 ];
