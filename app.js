@@ -1,5 +1,6 @@
 let step = 0;
 
+// MPL-style pick/ban order
 const draftOrder = [
   // Ban phase 1
   { type: "ban", side: "Blue" },
@@ -43,9 +44,9 @@ window.onload = () => {
 
     // Hero icon
     const img = document.createElement("img");
-    img.src = hero.icon;
+    img.src = hero.icon; // Must match exact file path
     img.alt = hero.name;
-    img.width = 60; // adjust size as needed
+    img.width = 60;
     img.height = 60;
     img.style.objectFit = "cover";
 
@@ -120,7 +121,10 @@ function scoreTeam(team) {
   team.forEach(name => {
     const hero = heroes.find(h => h.name === name);
     if (hero) {
-      score += hero.early + hero.late + hero.cc;
+      const early = Number(hero.early) || 0;
+      const late = Number(hero.late) || 0;
+      const cc = Number(hero.cc) || 0;
+      score += early + late + cc;
     }
   });
   return score;
