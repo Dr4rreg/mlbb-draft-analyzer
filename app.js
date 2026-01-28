@@ -1,18 +1,39 @@
-let turn = 0;
+let step = 0;
+
+const draftOrder = [
+  // Ban phase 1
+  { type: "ban", side: "Blue" },
+  { type: "ban", side: "Red" },
+  { type: "ban", side: "Blue" },
+  { type: "ban", side: "Red" },
+  { type: "ban", side: "Blue" },
+  { type: "ban", side: "Red" },
+
+  // Pick phase 1
+  { type: "pick", side: "Blue" },
+  { type: "pick", side: "Red" },
+  { type: "pick", side: "Red" },
+  { type: "pick", side: "Blue" },
+  { type: "pick", side: "Blue" },
+  { type: "pick", side: "Red" },
+
+  // Ban phase 2
+  { type: "ban", side: "Red" },
+  { type: "ban", side: "Blue" },
+  { type: "ban", side: "Red" },
+  { type: "ban", side: "Blue" },
+
+  // Pick phase 2
+  { type: "pick", side: "Red" },
+  { type: "pick", side: "Blue" },
+  { type: "pick", side: "Blue" },
+  { type: "pick", side: "Red" }
+];
+
 const picks = [];
 const bans = [];
 
-const TOTAL_PICKS = 10;
-const TOTAL_BANS = 10;
-
-/*
-Simple alternating order for now:
-Even turn = Blue
-Odd turn = Red
-(Your MPL order already works elsewhere — this keeps clicks functional)
-*/
-
-window.onload = function () {
+window.onload = () => {
   const heroGrid = document.getElementById("heroGrid");
   heroGrid.innerHTML = "";
 
@@ -20,64 +41,60 @@ window.onload = function () {
     const btn = document.createElement("button");
     btn.className = "heroBtn";
     btn.innerText = hero.name;
-
-    btn.onclick = () => handleHeroClick(hero.name, btn);
-
+    btn.onclick = () => selectHero(hero.name, btn);
     heroGrid.appendChild(btn);
   });
 
   updateTurnIndicator();
 };
 
-function handleHeroClick(heroName, btn) {
+function selectHero(heroName, btn) {
   if (btn.classList.contains("locked")) return;
+  if (step >= draftOrder.length) return;
 
-  const side = turn % 2 === 0 ? "Blue" : "Red";
+  const current = draftOrder[step];
 
-  // Decide ban first, then pick
-  if (bans.length < TOTAL_BANS) {
-    bans.push({ hero: heroName, side });
-    addToList(side, heroName, true);
-  } else if (picks.length < TOTAL_PICKS) {
-    picks.push({ hero: heroName, side });
-    addToList(side, heroName, false);
+  if (current.type === "ban") {
+    bans.push({ hero: heroName, side: current.side });
+    addToList(current.side, heroName, true);
   } else {
-    return;
+    picks.push({ hero: heroName, side: current.side });
+    addToList(current.side, heroName, false);
   }
 
   btn.classList.add("locked");
   btn.disabled = true;
 
-  turn++;
+  step++;
+  updateTurnIndicator();
 
-  if (picks.length === TOTAL_PICKS) {
+  if (step === draftOrder.length) {
     document.getElementById("analyzeBtn").disabled = false;
     document.getElementById("turnIndicator").innerText = "Draft Complete!";
-  } else {
-    updateTurnIndicator();
   }
 }
 
 function addToList(side, heroName, isBan) {
   const listId = side === "Blue" ? "bluePicks" : "redPicks";
   const li = document.createElement("li");
-  li.innerText = (isBan ? "BAN: " : "PICK: ") + heroName;
+  li.innerText = `${isBan ? "BAN" : "PICK"}: ${heroName}`;
   document.getElementById(listId).appendChild(li);
 }
 
 function updateTurnIndicator() {
-  const side = turn % 2 === 0 ? "Blue" : "Red";
-  const phase = bans.length < TOTAL_BANS ? "Ban Phase" : "Pick Phase";
+  if (step >= draftOrder.length) return;
+
+  const current = draftOrder[step];
   document.getElementById("turnIndicator").innerText =
-    `${phase} — ${side} Team's Turn`;
+    `${current.side} Team — ${current.type.toUpperCase()} Phase`;
 }
 
 function analyzeDraft() {
   const blueHeroes = picks.filter(p => p.side === "Blue").map(p => p.hero);
   const redHeroes = picks.filter(p => p.side === "Red").map(p => p.hero);
 
-  let blueScore = scoreTeam(blueHeroes);
-  let redScore = scoreTeam(redHeroes);
+  const blueScore = scoreTeam(blueHeroes);
+  const redScore = scoreTeam(redHeroes);
 
   let result = `Blue Score: ${blueScore} | Red Score: ${redScore}<br>`;
 
