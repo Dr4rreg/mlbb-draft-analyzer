@@ -1,14 +1,37 @@
 body {
   font-family: Arial, sans-serif;
-  margin: 30px;
+  margin: 20px;
 }
 
-.draft-container {
+#heroGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.heroBtn {
+  padding: 10px;
+  background-color: #ececec;
+  border: 1px solid #333;
+  border-radius: 5px;
+  cursor: pointer;
+  min-width: 70px;
+  text-align: center;
+}
+
+.heroBtn.locked {
+  background-color: #999;
+  cursor: not-allowed;
+}
+
+.picksContainer {
   display: flex;
   gap: 40px;
 }
 
-select {
-  width: 200px;
-  height: 200px;
+ul {
+  list-style-type: none;
+  padding: 0;
 }
+
