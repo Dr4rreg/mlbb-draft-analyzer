@@ -1,14 +1,30 @@
-let phase = "ban"; // "ban" or "pick"
-let turn = 0;
-let MAX_PICKS;
-const BAN_LIMIT = 4;
+let draftStep = 0;
+let picksInStep = 0;
 
-const picks = []; // { hero, side }
-const bans = [];  // { hero, side }
+const draftSequence = [
+  { type: "ban", side: "Blue", count: 1 },  // B1 Ban
+  { type: "ban", side: "Red", count: 1 },   // R1 Ban
+  { type: "ban", side: "Blue", count: 1 },  // B2 Ban
+  { type: "ban", side: "Red", count: 1 },   // R2 Ban
+  { type: "ban", side: "Blue", count: 1 },  // B3 Ban
+  { type: "ban", side: "Red", count: 1 },   // R3 Ban
+  { type: "pick", side: "Blue", count: 1 }, // B1 Pick
+  { type: "pick", side: "Red", count: 2 },  // R1 + R2 Pick
+  { type: "pick", side: "Blue", count: 2 }, // B2 + B3 Pick
+  { type: "pick", side: "Red", count: 1 },  // R3 Pick
+  { type: "ban", side: "Red", count: 1 },   // R4 Ban
+  { type: "ban", side: "Blue", count: 1 },  // B4 Ban
+  { type: "ban", side: "Red", count: 1 },   // R5 Ban
+  { type: "ban", side: "Blue", count: 1 },  // B5 Ban
+  { type: "pick", side: "Red", count: 1 },  // R4 Pick
+  { type: "pick", side: "Blue", count: 2 }, // B4 + B5 Pick
+  { type: "pick", side: "Red", count: 1 }   // R5 Pick
+];
+
+const picks = [];
+const bans = [];
 
 window.onload = function () {
-  MAX_PICKS = Math.min(10, heroes.length); // total number of picks allowed (capped at 10)
-
   const heroGrid = document.getElementById("heroGrid");
   heroGrid.innerHTML = "";
 
@@ -23,98 +39,59 @@ window.onload = function () {
   updateTurnIndicator();
 };
 
-/* ---------- MAIN HANDLER ---------- */
 function selectHero(heroName, btn) {
-  if (phase === "ban") {
-    banHero(heroName, btn);
+  if (draftStep >= draftSequence.length) return;
+
+  const currentStep = draftSequence[draftStep];
+
+  // prevent duplicate
+  if (bans.some(b => b.hero === heroName) || picks.some(p => p.hero === heroName)) return;
+
+  if (currentStep.type === "ban") {
+    bans.push({ hero: heroName, side: currentStep.side });
+    document.getElementById("banList").innerHTML +=
+      `<li>${currentStep.side} banned ${heroName}</li>`;
   } else {
-    pickHero(heroName, btn);
+    picks.push({ hero: heroName, side: currentStep.side });
+    const listId = currentStep.side === "Blue" ? "bluePicks" : "redPicks";
+    document.getElementById(listId).innerHTML += `<li>${heroName}</li>`;
   }
-}
-
-/* ---------- BAN LOGIC ---------- */
-function banHero(heroName, btn) {
-  if (bans.some(b => b.hero === heroName)) return;
-
-  const side = getBanSide();
-  bans.push({ hero: heroName, side });
-
-  document.getElementById("banList").innerHTML +=
-    `<li>${side} banned ${heroName}</li>`;
 
   btn.disabled = true;
   btn.classList.add("locked");
 
-  turn++;
+  picksInStep++;
 
-  if (bans.length >= BAN_LIMIT) {
-    phase = "pick";
-    turn = 0;
-    document.getElementById("turnIndicator").innerText =
-      "Ban phase complete. Pick phase begins!";
-  } else {
-    updateTurnIndicator();
-  }
-}
-
-function getBanSide() {
-  // Blue → Red → Red → Blue
-  if (turn === 0 || turn === 3) return "Blue";
-  return "Red";
-}
-
-/* ---------- PICK LOGIC ---------- */
-function canPick(side) {
-  const count = picks.filter(p => p.side === side).length;
-  return count < 5;
-}
-
-function pickHero(heroName, btn) {
-  const side = turn % 2 === 0 ? "Blue" : "Red";
-
-  if (!canPick(side)) {
-    alert(`${side} already has 5 heroes!`);
-    return;
+  // move to next draft step if current step completed
+  if (picksInStep >= currentStep.count) {
+    draftStep++;
+    picksInStep = 0;
   }
 
-  if (picks.some(p => p.hero === heroName)) return;
+  updateTurnIndicator();
 
-  picks.push({ hero: heroName, side });
-
-  const listId = side === "Blue" ? "bluePicks" : "redPicks";
-  document.getElementById(listId).innerHTML += `<li>${heroName}</li>`;
-
-  btn.disabled = true;
-  btn.classList.add("locked");
-
-  turn++;
-
-  // Check if both teams have 5 picks
-  const blueCount = picks.filter(p => p.side === "Blue").length;
-  const redCount = picks.filter(p => p.side === "Red").length;
-
-  if (blueCount === 5 && redCount === 5) {
+  // check if draft complete
+  if (draftStep >= draftSequence.length) {
     document.getElementById("analyzeBtn").disabled = false;
     document.getElementById("turnIndicator").innerText = "Draft Complete!";
-  } else {
-    updateTurnIndicator();
   }
 }
 
-/* ---------- UI ---------- */
 function updateTurnIndicator() {
-  if (phase === "ban") {
-    const side = getBanSide();
-    document.getElementById("turnIndicator").innerText = `${side} Team – Ban a hero`;
-  } else {
-    const side = turn % 2 === 0 ? "Blue" : "Red";
-    const sideCount = picks.filter(p => p.side === side).length;
+  if (draftStep >= draftSequence.length) return;
+
+  const currentStep = draftSequence[draftStep];
+  if (currentStep.type === "ban") {
     document.getElementById("turnIndicator").innerText =
-      `${side} Team – Pick a hero (${sideCount}/5)`;
+      `${currentStep.side} Team – Ban a hero`;
+  } else {
+    const sideCount = picks.filter(p => p.side === currentStep.side).length;
+    const maxCount = currentStep.count;
+    document.getElementById("turnIndicator").innerText =
+      `${currentStep.side} Team – Pick a hero (${sideCount % maxCount + 1}/${maxCount})`;
   }
 }
 
-/* ---------- ANALYZE ---------- */
 function analyzeDraft() {
   const blueHeroes = picks.filter(p => p.side === "Blue").map(p => p.hero);
   const redHeroes = picks.filter(p => p.side === "Red").map(p => p.hero);
@@ -137,11 +114,9 @@ function analyzeDraft() {
 
 function scoreTeam(team) {
   let score = 0;
-
   team.forEach(name => {
     const hero = heroes.find(h => h.name === name);
     if (hero) score += hero.early + hero.late + hero.cc;
   });
-
   return score;
 }
