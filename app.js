@@ -33,7 +33,7 @@ function pickHero(heroName, btnElement) {
   turn++;
 
   // Check if draft complete
-  if (picks.length === MAX_PICKS) {
+  if (picks.length >== MAX_PICKS) {
     document.getElementById("analyzeBtn").disabled = false;
     document.getElementById("turnIndicator").innerText = "Draft Complete!";
   } else {
