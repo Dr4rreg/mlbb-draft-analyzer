@@ -2,33 +2,19 @@ let step = 0;
 
 // MPL-style pick/ban order
 const draftOrder = [
-  // Ban phase 1
-  { type: "ban", side: "Blue" },
-  { type: "ban", side: "Red" },
-  { type: "ban", side: "Blue" },
-  { type: "ban", side: "Red" },
-  { type: "ban", side: "Blue" },
-  { type: "ban", side: "Red" },
+  { type: "ban", side: "Blue" }, { type: "ban", side: "Red" },
+  { type: "ban", side: "Blue" }, { type: "ban", side: "Red" },
+  { type: "ban", side: "Blue" }, { type: "ban", side: "Red" },
 
-  // Pick phase 1
-  { type: "pick", side: "Blue" },
-  { type: "pick", side: "Red" },
-  { type: "pick", side: "Red" },
-  { type: "pick", side: "Blue" },
-  { type: "pick", side: "Blue" },
-  { type: "pick", side: "Red" },
+  { type: "pick", side: "Blue" }, { type: "pick", side: "Red" },
+  { type: "pick", side: "Red" }, { type: "pick", side: "Blue" },
+  { type: "pick", side: "Blue" }, { type: "pick", side: "Red" },
 
-  // Ban phase 2
-  { type: "ban", side: "Red" },
-  { type: "ban", side: "Blue" },
-  { type: "ban", side: "Red" },
-  { type: "ban", side: "Blue" },
+  { type: "ban", side: "Red" }, { type: "ban", side: "Blue" },
+  { type: "ban", side: "Red" }, { type: "ban", side: "Blue" },
 
-  // Pick phase 2
-  { type: "pick", side: "Red" },
-  { type: "pick", side: "Blue" },
-  { type: "pick", side: "Blue" },
-  { type: "pick", side: "Red" }
+  { type: "pick", side: "Red" }, { type: "pick", side: "Blue" },
+  { type: "pick", side: "Blue" }, { type: "pick", side: "Red" }
 ];
 
 const picks = [];
@@ -42,15 +28,21 @@ window.onload = () => {
     const btn = document.createElement("button");
     btn.className = "heroBtn";
 
-    // Hero icon
     const img = document.createElement("img");
-    img.src = hero.icon; // Must match exact file path
+    img.src = hero.icon || "icons/placeholder.png";
     img.alt = hero.name;
     img.width = 60;
     img.height = 60;
     img.style.objectFit = "cover";
 
+    const label = document.createElement("div");
+    label.innerText = hero.name;
+    label.style.fontSize = "10px";
+    label.style.marginTop = "2px";
+
     btn.appendChild(img);
+    btn.appendChild(label);
+
     btn.onclick = () => selectHero(hero.name, btn);
 
     heroGrid.appendChild(btn);
@@ -94,7 +86,6 @@ function addToList(side, heroName, isBan) {
 
 function updateTurnIndicator() {
   if (step >= draftOrder.length) return;
-
   const current = draftOrder[step];
   document.getElementById("turnIndicator").innerText =
     `${current.side} Team — ${current.type.toUpperCase()} Phase`;
@@ -108,7 +99,6 @@ function analyzeDraft() {
   const redScore = scoreTeam(redHeroes);
 
   let result = `Blue Score: ${blueScore} | Red Score: ${redScore}<br>`;
-
   if (blueScore > redScore) result += "Blue has the stronger draft";
   else if (redScore > blueScore) result += "Red has the stronger draft";
   else result += "Drafts are evenly matched";
