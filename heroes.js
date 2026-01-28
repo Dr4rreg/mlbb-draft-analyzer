@@ -79,8 +79,7 @@ const heroes = [
   { name: "Karrie", early: 3, late: 5, cc: 1, role: "Marksman", icon: "icons/placeholder.png" },
   { name: "Bruno", early: 3, late: 5, cc: 1, role: "Marksman", icon: "icons/placeholder.png" },
   { name: "Beatrix", early: 3, late: 5, cc: 2, role: "Marksman", icon: "icons/placeholder.png" }
-  
-];{ name: "Fanny", early: 4, late: 5, cc: 1, role: "Assassin", icon: "icons/placeholder.png" },
+  { name: "Fanny", early: 4, late: 5, cc: 1, role: "Assassin", icon: "icons/placeholder.png" },
   { name: "Claude", early: 3, late: 5, cc: 2, role: "Marksman", icon: "icons/placeholder.png" },
   { name: "Ling", early: 5, late: 4, cc: 1, role: "Assassin", icon: "icons/placeholder.png" },
   { name: "Harith", early: 4, late: 4, cc: 2, role: "Mage", icon: "icons/placeholder.png" },
@@ -160,4 +159,4 @@ const heroes = [
   { name: "Karrie", early: 3, late: 5, cc: 1, role: "Marksman", icon: "icons/placeholder.png" },
   { name: "Bruno", early: 3, late: 5, cc: 1, role: "Marksman", icon: "icons/placeholder.png" },
   { name: "Beatrix", early: 3, late: 5, cc: 2, role: "Marksman", icon: "icons/placeholder.png" } 
-] 
+];
