@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>MLBB Draft Analyzer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>MLBB Draft Analyzer (Prototype)</h1>
+
+  <div class="draft-container">
+    <div>
+      <h2>Blue Side</h2>
+      <select id="bluePick" multiple></select>
+    </div>
+    <div>
+      <h2>Red Side</h2>
+      <select id="redPick" multiple></select>
+    </div>
+  </div>
+
+  <button onclick="analyzeDraft()">Analyze Draft</button>
+
+  <div id="result"></div>
+
+  <script src="heroes.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
