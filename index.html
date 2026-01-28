@@ -1,52 +1,31 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>MLBB Draft Simulator</title>
+<h1>MLBB Draft Simulator (Turn-Based)</h1>
 
-  <!-- CSS -->
-  <link rel="stylesheet" href="style.css">
+<p id="turnIndicator">Blue Team's Turn</p>
 
-  <!-- Mobile-friendly scaling -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
+<!-- HERO GRID -->
+<div id="heroGrid"></div>
 
-<body>
+<!-- BAN LIST -->
+<h3>Bans</h3>
+<ul id="banList"></ul>
 
-  <h1>MLBB Draft Simulator</h1>
-
-  <!-- Turn / Phase Indicator -->
-  <div id="turnIndicator">Loading...</div>
-
-  <!-- HERO GRID -->
-  <div id="heroGrid"></div>
-
-  <!-- PICKS / BANS AREA -->
-  <div id="draftArea">
-    <div class="teamColumn">
-      <h2>Blue Team</h2>
-      <ul id="bluePicks"></ul>
-    </div>
-
-    <div class="teamColumn">
-      <h2>Red Team</h2>
-      <ul id="redPicks"></ul>
-    </div>
+<!-- PICKS -->
+<h2>Picks</h2>
+<div class="picksContainer">
+  <div>
+    <h3>Blue Team</h3>
+    <ul id="bluePicks"></ul>
   </div>
-
-  <!-- Analyze Button -->
-  <div style="text-align:center; margin: 10px;">
-    <button id="analyzeBtn" onclick="analyzeDraft()" disabled>
-      Analyze Draft
-    </button>
+  <div>
+    <h3>Red Team</h3>
+    <ul id="redPicks"></ul>
   </div>
+</div>
 
-  <!-- Result Output -->
-  <div id="result"></div>
+<!-- ANALYZE BUTTON -->
+<button id="analyzeBtn" onclick="analyzeDraft()" disabled>Analyze Draft</button>
 
-  <!-- JavaScript -->
-  <script src="heroes.js"></script>
-  <script src="app.js"></script>
+<div id="result"></div>
 
-</body>
-</html>
+<script src="heroes.js"></script>
+<script src="app.js"></script>
