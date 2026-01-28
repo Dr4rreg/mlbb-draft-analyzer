@@ -2,23 +2,23 @@ let draftStep = 0;
 let picksInStep = 0;
 
 const draftSequence = [
-  { type: "ban", side: "Blue", count: 1 },  // B1 Ban
-  { type: "ban", side: "Red", count: 1 },   // R1 Ban
-  { type: "ban", side: "Blue", count: 1 },  // B2 Ban
-  { type: "ban", side: "Red", count: 1 },   // R2 Ban
-  { type: "ban", side: "Blue", count: 1 },  // B3 Ban
-  { type: "ban", side: "Red", count: 1 },   // R3 Ban
-  { type: "pick", side: "Blue", count: 1 }, // B1 Pick
-  { type: "pick", side: "Red", count: 2 },  // R1 + R2 Pick
-  { type: "pick", side: "Blue", count: 2 }, // B2 + B3 Pick
-  { type: "pick", side: "Red", count: 1 },  // R3 Pick
-  { type: "ban", side: "Red", count: 1 },   // R4 Ban
-  { type: "ban", side: "Blue", count: 1 },  // B4 Ban
-  { type: "ban", side: "Red", count: 1 },   // R5 Ban
-  { type: "ban", side: "Blue", count: 1 },  // B5 Ban
-  { type: "pick", side: "Red", count: 1 },  // R4 Pick
-  { type: "pick", side: "Blue", count: 2 }, // B4 + B5 Pick
-  { type: "pick", side: "Red", count: 1 }   // R5 Pick
+  { type: "ban", side: "Blue", count: 1 },   // B1 Ban
+  { type: "ban", side: "Red", count: 1 },    // R1 Ban
+  { type: "ban", side: "Blue", count: 1 },   // B2 Ban
+  { type: "ban", side: "Red", count: 1 },    // R2 Ban
+  { type: "ban", side: "Blue", count: 1 },   // B3 Ban
+  { type: "ban", side: "Red", count: 1 },    // R3 Ban
+  { type: "pick", side: "Blue", count: 1 },  // B1 Pick
+  { type: "pick", side: "Red", count: 2 },   // R1 + R2 Pick
+  { type: "pick", side: "Blue", count: 2 },  // B2 + B3 Pick
+  { type: "pick", side: "Red", count: 1 },   // R3 Pick
+  { type: "ban", side: "Red", count: 1 },    // R4 Ban
+  { type: "ban", side: "Blue", count: 1 },   // B4 Ban
+  { type: "ban", side: "Red", count: 1 },    // R5 Ban
+  { type: "ban", side: "Blue", count: 1 },   // B5 Ban
+  { type: "pick", side: "Red", count: 1 },   // R4 Pick
+  { type: "pick", side: "Blue", count: 2 },  // B4 + B5 Pick
+  { type: "pick", side: "Red", count: 1 }    // R5 Pick
 ];
 
 const picks = [];
@@ -44,7 +44,7 @@ function selectHero(heroName, btn) {
 
   const currentStep = draftSequence[draftStep];
 
-  // prevent duplicate
+  // prevent duplicate selection
   if (bans.some(b => b.hero === heroName) || picks.some(p => p.hero === heroName)) return;
 
   if (currentStep.type === "ban") {
