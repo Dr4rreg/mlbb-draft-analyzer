@@ -1,24 +1,29 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>MLBB Draft Analyzer</title>
+  <title>MLBB Draft Simulator</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>MLBB Draft Analyzer (Prototype)</h1>
+  <h1>MLBB Draft Simulator (Turn-Based)</h1>
 
-  <div class="draft-container">
+  <p id="turnIndicator">Blue Team's Turn</p>
+
+  <div id="heroGrid"></div>
+
+  <h2>Picks</h2>
+  <div class="picksContainer">
     <div>
-      <h2>Blue Side</h2>
-      <select id="bluePick" multiple></select>
+      <h3>Blue Team</h3>
+      <ul id="bluePicks"></ul>
     </div>
     <div>
-      <h2>Red Side</h2>
-      <select id="redPick" multiple></select>
+      <h3>Red Team</h3>
+      <ul id="redPicks"></ul>
     </div>
   </div>
 
-  <button onclick="analyzeDraft()">Analyze Draft</button>
+  <button id="analyzeBtn" onclick="analyzeDraft()" disabled>Analyze Draft</button>
 
   <div id="result"></div>
 
