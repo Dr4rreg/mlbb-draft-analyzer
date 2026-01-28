@@ -1,58 +1,127 @@
-.heroBtn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin: 5px;
-  padding: 5px;
-  width: 100px;
-  text-align: center;
-  border: 1px solid #333;
-  border-radius: 5px;
-  background-color: #f0f0f0;
+/* =====================
+   Global Reset & Base
+   ===================== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
-.heroIcon {
-  width: 80px;
-  height: 80px;
+body {
+  background-color: #0f172a; /* dark blue */
+  color: #e5e7eb;
+  padding: 16px;
 }
 
-.roleTag {
-  font-size: 0.8em;
-  color: #555;
+/* =====================
+   Layout Containers
+   ===================== */
+.app {
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
-.heroBtn.locked {
-  opacity: 0.5;
-  cursor: not-allowed;
+h1, h2, h3 {
+  margin-bottom: 8px;
 }
 
-#bluePicks li {
-  color: #007bff;
+.section {
+  margin-bottom: 20px;
+  padding: 12px;
+  background-color: #020617;
+  border-radius: 8px;
 }
 
-#redPicks li {
-  color: #dc3545;
-}
-
-#banList li {
-  color: #888;
-}
-
+/* =====================
+   Hero Grid (MAIN FIX)
+   ===================== */
 #heroGrid {
   display: grid;
   grid-template-columns: repeat(10, 1fr); /* 10 heroes per row */
   gap: 8px;
-  max-width: 100%;
 }
 
+/* =====================
+   Hero Buttons
+   ===================== */
 .heroBtn {
-  padding: 6px;
-  font-size: 12px;
+  background-color: #1e293b;
+  color: #e5e7eb;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 6px 4px;
+  font-size: 11px;
+  text-align: center;
   cursor: pointer;
+  transition: all 0.15s ease-in-out;
 }
 
+.heroBtn:hover {
+  background-color: #334155;
+  transform: translateY(-1px);
+}
+
+/* Picked / Banned */
 .heroBtn.locked {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
+/* Optional: Different states if you already use them */
+.heroBtn.blue {
+  background-color: #1d4ed8;
+  border-color: #3b82f6;
+}
+
+.heroBtn.red {
+  background-color: #991b1b;
+  border-color: #ef4444;
+}
+
+/* =====================
+   Draft Panels
+   ===================== */
+.draftRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.slot {
+  flex: 1;
+  min-height: 48px;
+  background-color: #020617;
+  border: 1px dashed #334155;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+/* =====================
+   Verdict / Analysis Box
+   ===================== */
+.verdict {
+  margin-top: 12px;
+  padding: 10px;
+  background-color: #020617;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+/* =====================
+   Responsive (Optional)
+   ===================== */
+@media (max-width: 900px) {
+  #heroGrid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  #heroGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
