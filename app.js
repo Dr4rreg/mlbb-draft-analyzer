@@ -1,42 +1,84 @@
+let phase = "ban"; // "ban" or "pick"
 let turn = 0;
 let MAX_PICKS;
-const picks = []; // stores { hero, side }
+const BAN_LIMIT = 4;
+
+const picks = []; // { hero, side }
+const bans = [];  // { hero, side }
 
 window.onload = function () {
-  // Ensure heroes is loaded
   MAX_PICKS = Math.min(10, heroes.length);
 
   const heroGrid = document.getElementById("heroGrid");
+  heroGrid.innerHTML = "";
 
   heroes.forEach(h => {
     const btn = document.createElement("button");
     btn.className = "heroBtn";
     btn.innerText = h.name;
-    btn.onclick = () => pickHero(h.name, btn);
+    btn.onclick = () => selectHero(h.name, btn);
     heroGrid.appendChild(btn);
   });
 
   updateTurnIndicator();
 };
 
-function pickHero(heroName, btnElement) {
-  // Prevent duplicate picks
-  if (picks.some(p => p.hero === heroName)) return;
+function selectHero(heroName, btn) {
+  if (phase === "ban") {
+    banHero(heroName, btn);
+  } else {
+    pickHero(heroName, btn);
+  }
+}
 
-  const currentSide = turn % 2 === 0 ? "Blue" : "Red";
-  picks.push({ hero: heroName, side: currentSide });
+/* ---------- BAN LOGIC ---------- */
 
-  // Update UI list
-  const pickListId = currentSide === "Blue" ? "bluePicks" : "redPicks";
-  document.getElementById(pickListId).innerHTML += `<li>${heroName}</li>`;
+function banHero(heroName, btn) {
+  if (bans.some(b => b.hero === heroName)) return;
 
-  // Lock hero button
-  btnElement.disabled = true;
-  btnElement.classList.add("locked");
+  const side = getBanSide();
+  bans.push({ hero: heroName, side });
+
+  document.getElementById("banList").innerHTML +=
+    `<li>${side} banned ${heroName}</li>`;
+
+  btn.disabled = true;
+  btn.classList.add("locked");
 
   turn++;
 
-  // Check if draft is complete
+  if (bans.length >= BAN_LIMIT) {
+    phase = "pick";
+    turn = 0;
+    document.getElementById("turnIndicator").innerText =
+      "Ban phase complete. Pick phase begins!";
+  } else {
+    updateTurnIndicator();
+  }
+}
+
+function getBanSide() {
+  // Blue → Red → Red → Blue
+  if (turn === 0 || turn === 3) return "Blue";
+  return "Red";
+}
+
+/* ---------- PICK LOGIC ---------- */
+
+function pickHero(heroName, btn) {
+  if (picks.some(p => p.hero === heroName)) return;
+
+  const side = turn % 2 === 0 ? "Blue" : "Red";
+  picks.push({ hero: heroName, side });
+
+  const listId = side === "Blue" ? "bluePicks" : "redPicks";
+  document.getElementById(listId).innerHTML += `<li>${heroName}</li>`;
+
+  btn.disabled = true;
+  btn.classList.add("locked");
+
+  turn++;
+
   if (picks.length >= MAX_PICKS) {
     document.getElementById("analyzeBtn").disabled = false;
     document.getElementById("turnIndicator").innerText = "Draft Complete!";
@@ -45,45 +87,17 @@ function pickHero(heroName, btnElement) {
   }
 }
 
+/* ---------- UI ---------- */
+
 function updateTurnIndicator() {
-  const side = turn % 2 === 0 ? "Blue" : "Red";
-  document.getElementById("turnIndicator").innerText = `${side} Team's Turn`;
-}
+  let text = "";
 
-function analyzeDraft() {
-  const blueHeroes = picks
-    .filter(p => p.side === "Blue")
-    .map(p => p.hero);
-
-  const redHeroes = picks
-    .filter(p => p.side === "Red")
-    .map(p => p.hero);
-
-  const blueScore = scoreTeam(blueHeroes);
-  const redScore = scoreTeam(redHeroes);
-
-  let result = `Blue Score: ${blueScore} | Red Score: ${redScore}<br>`;
-
-  if (blueScore > redScore) {
-    result += "Blue has better draft";
-  } else if (redScore > blueScore) {
-    result += "Red has better draft";
+  if (phase === "ban") {
+    text = `${getBanSide()} Team – Ban a hero`;
   } else {
-    result += "Both drafts are evenly matched";
+    const side = turn % 2 === 0 ? "Blue" : "Red";
+    text = `${side} Team – Pick a hero`;
   }
 
-  document.getElementById("result").innerHTML = result;
-}
-
-function scoreTeam(team) {
-  let score = 0;
-
-  team.forEach(name => {
-    const hero = heroes.find(h => h.name === name);
-    if (hero) {
-      score += hero.early + hero.late + hero.cc;
-    }
-  });
-
-  return score;
+  document.getElementById("turnIndicator").innerText = text;
 }
