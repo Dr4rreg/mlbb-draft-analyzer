@@ -1,80 +1,75 @@
-let draftStep = 0;
+let turn = 0;
 const picks = [];
 const bans = [];
 
-const draftSequence = [
-  { type: "ban", side: "Blue" }, { type: "ban", side: "Red" },
-  { type: "ban", side: "Blue" }, { type: "ban", side: "Red" },
-  { type: "ban", side: "Blue" }, { type: "ban", side: "Red" },
-  { type: "pick", side: "Blue" }, { type: "pick", side: "Red" },
-  { type: "pick", side: "Red" }, { type: "pick", side: "Blue" },
-  { type: "pick", side: "Blue" }, { type: "pick", side: "Red" },
-  { type: "ban", side: "Red" }, { type: "ban", side: "Blue" },
-  { type: "ban", side: "Red" }, { type: "ban", side: "Blue" },
-  { type: "pick", side: "Red" }, { type: "pick", side: "Blue" },
-  { type: "pick", side: "Blue" }, { type: "pick", side: "Red" }
-];
+const TOTAL_PICKS = 10;
+const TOTAL_BANS = 10;
+
+/*
+Simple alternating order for now:
+Even turn = Blue
+Odd turn = Red
+(Your MPL order already works elsewhere — this keeps clicks functional)
+*/
 
 window.onload = function () {
   const heroGrid = document.getElementById("heroGrid");
   heroGrid.innerHTML = "";
 
-  heroes.forEach(h => {
+  heroes.forEach(hero => {
     const btn = document.createElement("button");
     btn.className = "heroBtn";
-    btn.innerHTML = `
-      <img src="${h.icon}" alt="${h.name}" class="heroIcon"><br>
-      ${h.name}<br>
-      <span class="roleTag">${h.role}</span>
-    `;
-    btn.onclick = () => selectHero(h.name, btn);
+    btn.innerText = hero.name;
+
+    btn.onclick = () => handleHeroClick(hero.name, btn);
+
     heroGrid.appendChild(btn);
   });
 
   updateTurnIndicator();
 };
 
-function selectHero(heroName, btn) {
-  if (draftStep >= draftSequence.length) return;
+function handleHeroClick(heroName, btn) {
+  if (btn.classList.contains("locked")) return;
 
-  const step = draftSequence[draftStep];
+  const side = turn % 2 === 0 ? "Blue" : "Red";
 
-  if (picks.some(p => p.hero === heroName) || bans.some(b => b.hero === heroName)) return;
-
-  if (step.type === "ban") {
-    bans.push({ hero: heroName, side: step.side });
-    const li = document.createElement("li");
-    li.innerText = `${step.side} banned ${heroName}`;
-    document.getElementById("banList").appendChild(li);
+  // Decide ban first, then pick
+  if (bans.length < TOTAL_BANS) {
+    bans.push({ hero: heroName, side });
+    addToList(side, heroName, true);
+  } else if (picks.length < TOTAL_PICKS) {
+    picks.push({ hero: heroName, side });
+    addToList(side, heroName, false);
   } else {
-    picks.push({ hero: heroName, side: step.side });
-    const listId = step.side === "Blue" ? "bluePicks" : "redPicks";
-    const li = document.createElement("li");
-    li.innerText = heroName;
-    document.getElementById(listId).appendChild(li);
+    return;
   }
 
-  btn.disabled = true;
   btn.classList.add("locked");
+  btn.disabled = true;
 
-  draftStep++;
-  updateTurnIndicator();
+  turn++;
 
-  if (draftStep >= draftSequence.length) {
+  if (picks.length === TOTAL_PICKS) {
     document.getElementById("analyzeBtn").disabled = false;
     document.getElementById("turnIndicator").innerText = "Draft Complete!";
+  } else {
+    updateTurnIndicator();
   }
 }
 
-function updateTurnIndicator() {
-  if (draftStep >= draftSequence.length) return;
+function addToList(side, heroName, isBan) {
+  const listId = side === "Blue" ? "bluePicks" : "redPicks";
+  const li = document.createElement("li");
+  li.innerText = (isBan ? "BAN: " : "PICK: ") + heroName;
+  document.getElementById(listId).appendChild(li);
+}
 
-  const step = draftSequence[draftStep];
-  if (step.type === "ban") {
-    document.getElementById("turnIndicator").innerText = `${step.side} Team – Ban a hero`;
-  } else {
-    document.getElementById("turnIndicator").innerText = `${step.side} Team – Pick a hero`;
-  }
+function updateTurnIndicator() {
+  const side = turn % 2 === 0 ? "Blue" : "Red";
+  const phase = bans.length < TOTAL_BANS ? "Ban Phase" : "Pick Phase";
+  document.getElementById("turnIndicator").innerText =
+    `${phase} — ${side} Team's Turn`;
 }
 
 function analyzeDraft() {
@@ -85,9 +80,10 @@ function analyzeDraft() {
   let redScore = scoreTeam(redHeroes);
 
   let result = `Blue Score: ${blueScore} | Red Score: ${redScore}<br>`;
-  if (blueScore > redScore) result += "Blue has better draft";
-  else if (redScore > blueScore) result += "Red has better draft";
-  else result += "Both drafts are evenly matched";
+
+  if (blueScore > redScore) result += "Blue has the stronger draft";
+  else if (redScore > blueScore) result += "Red has the stronger draft";
+  else result += "Drafts are evenly matched";
 
   document.getElementById("result").innerHTML = result;
 }
@@ -96,7 +92,9 @@ function scoreTeam(team) {
   let score = 0;
   team.forEach(name => {
     const hero = heroes.find(h => h.name === name);
-    if (hero) score += hero.early + hero.late + hero.cc;
+    if (hero) {
+      score += hero.early + hero.mid + hero.late;
+    }
   });
   return score;
 }
