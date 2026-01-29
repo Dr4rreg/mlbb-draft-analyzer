@@ -1,154 +1,146 @@
-// ========================
-// GLOBAL STATE
-// ========================
-let currentStep = 0;
+let step = 0;
 
-// MPL-style simplified sequence (no timers yet)
-const draftSequence = [
-  { side: "blue", type: "ban" },
-  { side: "red", type: "ban" },
-  { side: "blue", type: "ban" },
-  { side: "red", type: "ban" },
+// MPL-style pick/ban order
+const draftOrder = [
+  // Ban phase 1
+  { type: "ban", side: "Blue" },
+  { type: "ban", side: "Red" },
+  { type: "ban", side: "Blue" },
+  { type: "ban", side: "Red" },
+  { type: "ban", side: "Blue" },
+  { type: "ban", side: "Red" },
 
-  { side: "blue", type: "pick" },
-  { side: "red", type: "pick" },
-  { side: "red", type: "pick" },
-  { side: "blue", type: "pick" },
+  // Pick phase 1
+  { type: "pick", side: "Blue" },
+  { type: "pick", side: "Red" },
+  { type: "pick", side: "Red" },
+  { type: "pick", side: "Blue" },
+  { type: "pick", side: "Blue" },
+  { type: "pick", side: "Red" },
 
-  { side: "blue", type: "pick" },
-  { side: "red", type: "pick" },
-  { side: "red", type: "pick" },
-  { side: "blue", type: "pick" }
+  // Ban phase 2
+  { type: "ban", side: "Red" },
+  { type: "ban", side: "Blue" },
+  { type: "ban", side: "Red" },
+  { type: "ban", side: "Blue" },
+
+  // Pick phase 2
+  { type: "pick", side: "Red" },
+  { type: "pick", side: "Blue" },
+  { type: "pick", side: "Blue" },
+  { type: "pick", side: "Red" }
 ];
 
-// ========================
-// INITIAL RENDER
-// ========================
-const heroGrid = document.getElementById("heroGrid");
+const picks = [];
+const bans = [];
 
-heroes.forEach((hero, index) => {
-  const btn = document.createElement("button");
-  btn.className = "heroBtn";
-  btn.dataset.index = index;
+window.onload = () => {
+  const heroGrid = document.getElementById("heroGrid");
+  heroGrid.innerHTML = "";
 
-  const img = document.createElement("img");
-  img.src = hero.icon;
-  img.alt = hero.name;
-  img.style.width = "40px";
-  img.style.height = "40px";
-  img.style.display = "block";
-  img.style.margin = "0 auto";
+  heroes.forEach(hero => {
+    const btn = document.createElement("button");
+    btn.className = "heroBtn";
 
-  btn.appendChild(img);
+    const img = document.createElement("img");
+    img.src = hero.icon;
+    img.alt = hero.name;
+    img.width = 60;
+    img.height = 60;
+    img.style.objectFit = "cover";
 
-  btn.onclick = () => handleHeroClick(hero, btn);
+    btn.appendChild(img);
+    btn.onclick = () => selectHero(hero, btn);
 
-  heroGrid.appendChild(btn);
-});
+    heroGrid.appendChild(btn);
+  });
 
-updateTurnIndicator();
-
-// ========================
-// CLICK HANDLER
-// ========================
-function handleHeroClick(hero, btn) {
-  if (btn.classList.contains("locked")) return;
-  if (currentStep >= draftSequence.length) return;
-
-  const step = draftSequence[currentStep];
-
-  addToList(step.side, hero, step.type === "ban");
-  btn.classList.add("locked");
-
-  currentStep++;
   updateTurnIndicator();
-  checkDraftComplete();
+};
+
+function selectHero(hero, btn) {
+  if (btn.classList.contains("locked")) return;
+  if (step >= draftOrder.length) return;
+
+  const current = draftOrder[step];
+
+  if (current.type === "ban") {
+    bans.push({ hero: hero.name, side: current.side });
+    addIconToList(current.side, hero.icon, true);
+  } else {
+    picks.push({ hero: hero.name, side: current.side });
+    addIconToList(current.side, hero.icon, false);
+  }
+
+  btn.classList.add("locked");
+  btn.disabled = true;
+
+  step++;
+  updateTurnIndicator();
+
+  // ✅ ENABLE ANALYZE BUTTON WHEN DRAFT ENDS
+  if (step === draftOrder.length) {
+    document.getElementById("analyzeBtn").disabled = false;
+    document.getElementById("turnIndicator").innerText = "Draft Complete!";
+  }
 }
 
-// ========================
-// ADD PICK / BAN
-// ========================
-function addToList(side, hero, isBan) {
-  const listId =
-    side === "blue" ? "bluePicks" : "redPicks";
-
-  const list = document.getElementById(listId);
-
+function addIconToList(side, iconPath, isBan) {
+  const listId = side === "Blue" ? "bluePicks" : "redPicks";
   const li = document.createElement("li");
 
   const img = document.createElement("img");
-  img.src = hero.icon;
-  img.alt = hero.name;
-  img.style.width = "32px";
-  img.style.height = "32px";
-  img.style.verticalAlign = "middle";
+  img.src = iconPath;
+  img.width = 40;
+  img.height = 40;
+  img.style.objectFit = "cover";
+  img.style.opacity = isBan ? "0.5" : "1";
 
   li.appendChild(img);
-  list.appendChild(li);
+  document.getElementById(listId).appendChild(li);
 }
 
-// ========================
-// TURN INDICATOR
-// ========================
 function updateTurnIndicator() {
-  const indicator = document.getElementById("turnIndicator");
+  if (step >= draftOrder.length) return;
 
-  if (currentStep >= draftSequence.length) {
-    indicator.textContent = "Draft completed";
-    return;
-  }
-
-  const step = draftSequence[currentStep];
-  indicator.textContent =
-    `${step.side.toUpperCase()} ${step.type.toUpperCase()}`;
+  const current = draftOrder[step];
+  document.getElementById("turnIndicator").innerText =
+    `${current.side} Team — ${current.type.toUpperCase()}`;
 }
 
-// ========================
-// ANALYZE BUTTON ENABLE
-// ========================
-function checkDraftComplete() {
-  const totalPicks =
-    document.getElementById("bluePicks").children.length +
-    document.getElementById("redPicks").children.length;
-
-  if (totalPicks === 10) {
-    document.getElementById("analyzeBtn").disabled = false;
-  }
-}
-
-// ========================
-// DRAFT ANALYSIS
-// ========================
 function analyzeDraft() {
-  let blueScore = 0;
-  let redScore = 0;
+  const blueHeroes = picks
+    .filter(p => p.side === "Blue")
+    .map(p => p.hero);
 
-  const blueList = document.getElementById("bluePicks").children;
-  const redList = document.getElementById("redPicks").children;
+  const redHeroes = picks
+    .filter(p => p.side === "Red")
+    .map(p => p.hero);
 
-  for (let li of blueList) {
-    const hero = heroes.find(
-      h => h.icon === li.querySelector("img").src.split("/").slice(-2).join("/")
-    );
-    if (hero) {
-      blueScore += hero.early + hero.late + hero.cc;
-    }
-  }
+  const blueScore = scoreTeam(blueHeroes);
+  const redScore = scoreTeam(redHeroes);
 
-  for (let li of redList) {
-    const hero = heroes.find(
-      h => h.icon === li.querySelector("img").src.split("/").slice(-2).join("/")
-    );
-    if (hero) {
-      redScore += hero.early + hero.late + hero.cc;
-    }
-  }
+  let result = `Blue Score: ${blueScore} | Red Score: ${redScore}<br>`;
 
-  let result = "Draw";
+  if (blueScore > redScore) result += "Blue has the stronger draft";
+  else if (redScore > blueScore) result += "Red has the stronger draft";
+  else result += "Drafts are evenly matched";
 
-  if (blueScore > redScore) result = "Blue Team Draft Advantage";
-  if (redScore > blueScore) result = "Red Team Draft Advantage";
+  document.getElementById("result").innerHTML = result;
+}
 
-  document.getElementById("result").textContent =
-    `Blue: ${blueScore} | Red: ${redScore} → ${result}`;
+function scoreTeam(team) {
+  let score = 0;
+
+  team.forEach(name => {
+    const hero = heroes.find(h => h.name === name);
+    if (!hero) return;
+
+    score +=
+      (Number(hero.early) || 0) +
+      (Number(hero.late) || 0) +
+      (Number(hero.cc) || 0);
+  });
+
+  return score;
 }
