@@ -79,17 +79,25 @@ function selectHero(heroName, btn) {
 
 function addToList(side, heroName, isBan) {
   const listId = side === "Blue" ? "bluePicks" : "redPicks";
+  const ul = document.getElementById(listId);
+
+  const hero = heroes.find(h => h.name === heroName);
+  if (!hero) return;
+
   const li = document.createElement("li");
-  li.innerText = `${isBan ? "BAN" : "PICK"}: ${heroName}`;
-  document.getElementById(listId).appendChild(li);
+  li.className = isBan ? "banItem" : "pickItem";
+
+  const img = document.createElement("img");
+  img.src = hero.icon;
+  img.alt = hero.name;
+  img.title = hero.name;
+  img.width = 48;
+  img.height = 48;
+
+  li.appendChild(img);
+  ul.appendChild(li);
 }
 
-function updateTurnIndicator() {
-  if (step >= draftOrder.length) return;
-  const current = draftOrder[step];
-  document.getElementById("turnIndicator").innerText =
-    `${current.side} Team — ${current.type.toUpperCase()} Phase`;
-}
 
 function analyzeDraft() {
   const blueHeroes = picks.filter(p => p.side === "Blue").map(p => p.hero);
