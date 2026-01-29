@@ -10,3 +10,11 @@ ul { list-style:none; padding-left:0; }
 li { font-size:14px; margin-bottom:4px; }
 #result { text-align:center; font-size:16px; margin-top:10px; }
 #turnIndicator { text-align:center; font-weight:bold; margin:10px 0; }
+/* Pick / Ban icons */
+.pickItem img,
+.banItem img {
+  display: block;
+  margin: 4px auto;
+  border-radius: 6px;
+  border: 1px solid #334155;
+}
