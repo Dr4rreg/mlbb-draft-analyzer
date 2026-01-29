@@ -2,7 +2,6 @@ let step = 0;
 
 // MPL-style pick/ban order
 const draftOrder = [
-  // Ban phase 1
   { type: "ban", side: "Blue" },
   { type: "ban", side: "Red" },
   { type: "ban", side: "Blue" },
@@ -10,7 +9,6 @@ const draftOrder = [
   { type: "ban", side: "Blue" },
   { type: "ban", side: "Red" },
 
-  // Pick phase 1
   { type: "pick", side: "Blue" },
   { type: "pick", side: "Red" },
   { type: "pick", side: "Red" },
@@ -18,13 +16,11 @@ const draftOrder = [
   { type: "pick", side: "Blue" },
   { type: "pick", side: "Red" },
 
-  // Ban phase 2
   { type: "ban", side: "Red" },
   { type: "ban", side: "Blue" },
   { type: "ban", side: "Red" },
   { type: "ban", side: "Blue" },
 
-  // Pick phase 2
   { type: "pick", side: "Red" },
   { type: "pick", side: "Blue" },
   { type: "pick", side: "Blue" },
@@ -42,16 +38,27 @@ window.onload = () => {
     const btn = document.createElement("button");
     btn.className = "heroBtn";
 
+    // Icon
     const img = document.createElement("img");
     img.src = hero.icon;
     img.alt = hero.name;
     img.width = 60;
     img.height = 60;
     img.style.objectFit = "cover";
+    img.style.display = "block";
+    img.style.margin = "0 auto";
+
+    // Name label
+    const label = document.createElement("div");
+    label.innerText = hero.name;
+    label.style.fontSize = "11px";
+    label.style.marginTop = "4px";
+    label.style.textAlign = "center";
 
     btn.appendChild(img);
-    btn.onclick = () => selectHero(hero, btn);
+    btn.appendChild(label);
 
+    btn.onclick = () => selectHero(hero, btn);
     heroGrid.appendChild(btn);
   });
 
@@ -78,7 +85,6 @@ function selectHero(hero, btn) {
   step++;
   updateTurnIndicator();
 
-  // ✅ ENABLE ANALYZE BUTTON WHEN DRAFT ENDS
   if (step === draftOrder.length) {
     document.getElementById("analyzeBtn").disabled = false;
     document.getElementById("turnIndicator").innerText = "Draft Complete!";
@@ -109,13 +115,8 @@ function updateTurnIndicator() {
 }
 
 function analyzeDraft() {
-  const blueHeroes = picks
-    .filter(p => p.side === "Blue")
-    .map(p => p.hero);
-
-  const redHeroes = picks
-    .filter(p => p.side === "Red")
-    .map(p => p.hero);
+  const blueHeroes = picks.filter(p => p.side === "Blue").map(p => p.hero);
+  const redHeroes = picks.filter(p => p.side === "Red").map(p => p.hero);
 
   const blueScore = scoreTeam(blueHeroes);
   const redScore = scoreTeam(redHeroes);
