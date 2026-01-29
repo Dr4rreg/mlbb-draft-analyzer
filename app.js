@@ -1,6 +1,6 @@
 let step = 0;
-let timer;
-let timeLeft = 50; // seconds per step
+let timerInterval;
+let timeLeft = 50; // 50 seconds per pick/ban
 
 // MPL-style pick/ban order
 const draftOrder = [
@@ -52,7 +52,7 @@ window.onload = () => {
     img.height = 60;
     img.style.objectFit = "cover";
 
-    // Hero name (visible in hero pool)
+    // Hero name in hero pool
     const label = document.createElement("div");
     label.className = "heroName";
     label.innerText = hero.name;
@@ -65,35 +65,41 @@ window.onload = () => {
   });
 
   updateTurnIndicator();
-  startTimer();
+  startTimer(); // start countdown
 };
 
-// Timer functions
+// ------------------ TIMER ------------------
 function startTimer() {
-  clearInterval(timer);
+  clearInterval(timerInterval);
   timeLeft = 50;
-  document.getElementById("timer").innerText = `Time left: ${timeLeft}s`;
+  updateTimerDisplay();
 
-  timer = setInterval(() => {
+  timerInterval = setInterval(() => {
     timeLeft--;
-    document.getElementById("timer").innerText = `Time left: ${timeLeft}s`;
+    updateTimerDisplay();
 
     if (timeLeft <= 0) {
-      clearInterval(timer);
+      clearInterval(timerInterval);
       handleTimeout();
     }
   }, 1000);
 }
 
+function updateTimerDisplay() {
+  const timerDiv = document.getElementById("timer");
+  timerDiv.innerText = `Time left: ${timeLeft}s`;
+}
+
+// Handle timeout for bans/picks
 function handleTimeout() {
   if (step >= draftOrder.length) return;
   const current = draftOrder[step];
 
   if (current.type === "ban") {
-    // Skip ban
+    // Skip ban if no hero selected
     step++;
   } else {
-    // Pick a random available hero
+    // Pick a random available hero if pick time expires
     const available = heroes.filter(h => {
       return !document.querySelector(`.heroBtn.locked img[alt='${h.name}']`);
     });
@@ -103,16 +109,16 @@ function handleTimeout() {
         b => b.querySelector("img").alt === randomHero.name
       );
       selectHero(randomHero, btn);
-    } else {
-      step++;
+      return;
     }
+    step++;
   }
 
   if (step < draftOrder.length) startTimer();
   else document.getElementById("timer").innerText = "Draft Complete!";
 }
 
-// Hero selection
+// ------------------ HERO SELECTION ------------------
 function selectHero(hero, btn) {
   if (btn.classList.contains("locked")) return;
   if (step >= draftOrder.length) return;
@@ -136,14 +142,14 @@ function selectHero(hero, btn) {
   if (step === draftOrder.length) {
     document.getElementById("analyzeBtn").disabled = false;
     document.getElementById("turnIndicator").innerText = "Draft Complete!";
-    clearInterval(timer);
     document.getElementById("timer").innerText = "";
+    clearInterval(timerInterval);
   } else {
-    startTimer(); // Reset timer for next step
+    startTimer(); // restart countdown for next step
   }
 }
 
-// Add picked/ban hero icons to list
+// ------------------ ADD HERO ICONS TO LIST ------------------
 function addIconToList(side, iconSrc, isBan) {
   const listId = side === "Blue" ? "bluePicks" : "redPicks";
   const li = document.createElement("li");
@@ -158,7 +164,7 @@ function addIconToList(side, iconSrc, isBan) {
   document.getElementById(listId).appendChild(li);
 }
 
-// Turn indicator
+// ------------------ TURN INDICATOR ------------------
 function updateTurnIndicator() {
   if (step >= draftOrder.length) return;
   const current = draftOrder[step];
@@ -166,7 +172,7 @@ function updateTurnIndicator() {
     `${current.side} Team — ${current.type.toUpperCase()} Phase`;
 }
 
-// Draft analysis
+// ------------------ DRAFT ANALYSIS ------------------
 function analyzeDraft() {
   const blueHeroes = picks.filter(p => p.side === "Blue").map(p => p.hero);
   const redHeroes = picks.filter(p => p.side === "Red").map(p => p.hero);
