@@ -1,6 +1,6 @@
 let step = 0;
 
-// MPL-style pick/ban order
+// MPL-style draft order
 const draftOrder = [
   { type: "ban", side: "Blue" },
   { type: "ban", side: "Red" },
@@ -38,22 +38,18 @@ window.onload = () => {
     const btn = document.createElement("button");
     btn.className = "heroBtn";
 
-    // Icon
+    // Hero icon
     const img = document.createElement("img");
     img.src = hero.icon;
     img.alt = hero.name;
     img.width = 60;
     img.height = 60;
     img.style.objectFit = "cover";
-    img.style.display = "block";
-    img.style.margin = "0 auto";
 
-    // Name label
+    // Hero name (ONLY for hero pool)
     const label = document.createElement("div");
+    label.className = "heroName";
     label.innerText = hero.name;
-    label.style.fontSize = "11px";
-    label.style.marginTop = "4px";
-    label.style.textAlign = "center";
 
     btn.appendChild(img);
     btn.appendChild(label);
