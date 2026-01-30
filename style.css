@@ -1,108 +1,36 @@
-/* Base Page */
 body {
   background-color: #0f172a;
   color: #e5e7eb;
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
+}
+
+h1, h2 {
   text-align: center;
 }
 
-h1 {
-  margin: 10px 0;
-}
-
-/* Turn / Timer */
-#turnIndicator {
-  font-weight: bold;
-  margin: 5px 0;
-  font-size: 18px;
-}
-
-#timer {
-  font-size: 20px;
-  font-weight: bold;
-  margin-bottom: 12px;
-  color: #f59e0b;
-}
-
-/* Bans Area */
-#banArea {
-  display: flex;
-  justify-content: space-between;
-  padding: 10px 20px;
-  margin-bottom: 5px;
-}
-
-.teamBan {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-}
-
-.teamBan.mirrored {
-  flex-direction: row-reverse;
-}
-
-.teamBan img {
-  width: 80px;   /* Bigger than hero pool */
-  height: 80px;
-  border-radius: 4px;
-  border: 1px solid #334155;
-  object-fit: cover;
-}
-
-/* Picks Area */
-#pickArea {
-  display: flex;
-  justify-content: space-between;
-  padding: 0 20px 15px 20px;
-  margin-bottom: 15px;
-}
-
-.teamPick {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-}
-
-.teamPick.mirrored {
-  flex-direction: row-reverse;
-}
-
-.teamPick img {
-  width: 80px;   /* Bigger than hero pool */
-  height: 80px;
-  border-radius: 4px;
-  border: 1px solid #334155;
-  object-fit: cover;
-}
-
-/* Hero Grid */
 #heroGrid {
   display: grid;
   grid-template-columns: repeat(10, 1fr);
-  gap: 2px;     /* Reduced gap */
-  padding: 10px 10px;
+  gap: 4px;
+  padding: 8px;
   max-width: 1200px;
-  margin: 0 auto 20px auto;
+  margin: 0 auto 10px auto;
 }
 
 .heroBtn {
   position: relative;
-  width: 60px;
-  height: 60px;
-  font-size: 12px;
+  width: 50px;
+  height: 50px;
+  font-size: 10px;
   border-radius: 6px;
   border: 1px solid #334155;
   background-color: #1e293b;
   color: #e5e7eb;
   cursor: pointer;
+  text-align: center;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
 }
 
 .heroBtn img {
@@ -113,25 +41,66 @@ h1 {
 
 .heroBtn span {
   position: absolute;
-  bottom: 2px;
+  bottom: 0;
   width: 100%;
   font-size: 10px;
   text-align: center;
   color: #e5e7eb;
   background: rgba(0,0,0,0.4);
-}
-
-.heroBtn:hover {
-  background-color: #334155;
+  white-space: normal;
+  line-height: 1.1em;
+  word-break: break-word;
+  padding: 0 2px;
 }
 
 .heroBtn.locked {
-  opacity: 0.4;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
-/* Result */
+#draftArea {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  gap: 10px;
+}
+
+.teamColumn {
+  width: 48%;
+  background: #020617;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+/* Horizontal ban row */
+.banRow {
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+}
+
+.pickColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pickColumn img, .banRow img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+}
+
 #result {
-  margin-top: 10px;
+  text-align: center;
   font-size: 16px;
+  margin-top: 10px;
+}
+
+#turnIndicator, #timer {
+  text-align: center;
+  font-weight: bold;
+  margin: 10px 0;
 }
