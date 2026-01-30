@@ -142,7 +142,6 @@ function startTimer() {
     document.getElementById("timer").innerText = `${timerValue}s`;
 
     if (timerValue <= 0) {
-      // Auto-pick/ban random hero
       autoSelectHero();
       resetTimer();
     }
@@ -164,7 +163,6 @@ function autoSelectHero() {
   if (availableHeroes.length === 0) return;
   const randomHero = availableHeroes[Math.floor(Math.random() * availableHeroes.length)];
 
-  // Simulate click
   const heroButtons = document.querySelectorAll(".heroBtn");
   heroButtons.forEach(btn => {
     if (!btn.classList.contains("locked") && btn.querySelector("span").innerText === randomHero.name) {
