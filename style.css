@@ -52,13 +52,20 @@ h1, h2 {
   cursor: not-allowed;
 }
 
-/* === UNIVERSAL ICON SIZE (IMPORTANT) === */
+/* =====================
+   UNIVERSAL ICON SIZE
+   (THIS FIXES EVERYTHING)
+===================== */
 .heroIcon,
-.pickIcon,
-.banIcon {
+.draftIcon {
   width: 64px;
   height: 64px;
+  min-width: 64px;
+  min-height: 64px;
+  max-width: 64px;
+  max-height: 64px;
   object-fit: cover;
+  display: block;
 }
 
 /* Hero name under icon */
@@ -71,20 +78,20 @@ h1, h2 {
 }
 
 /* =====================
-   DRAFT LAYOUT
+   DRAFT AREA
 ===================== */
 #draftArea {
   display: flex;
   justify-content: space-between;
-  padding: 10px;
-  gap: 10px;
+  padding: 12px;
+  gap: 16px;
 }
 
 .teamColumn {
   width: 48%;
   background: #020617;
   border-radius: 8px;
-  padding: 10px;
+  padding: 12px;
 }
 
 /* =====================
@@ -92,9 +99,16 @@ h1, h2 {
 ===================== */
 .banRow {
   display: flex;
-  gap: 6px;
   justify-content: center;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+/* Divider between bans and picks */
+.banDivider {
+  height: 1px;
+  background: #334155;
+  margin: 10px 0 14px;
 }
 
 /* =====================
@@ -104,7 +118,7 @@ h1, h2 {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 /* =====================
