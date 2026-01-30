@@ -2,66 +2,68 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>MLBB Draft Simulator</title>
-
-  <!-- Mobile-friendly scaling -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- CSS -->
+  <title>MLBB Draft Simulator – Phase 3.3</title>
   <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-
 <body>
 
   <h1>MLBB Draft Simulator</h1>
 
-  <!-- TURN + TIMER -->
-  <div id="turnIndicator">Loading...</div>
-  <div id="timerDisplay">50</div>
+  <!-- Turn / Phase Indicator + Timer -->
+  <div id="turnArea">
+    <div id="turnIndicator">Loading...</div>
+    <div id="timer">50s</div>
+  </div>
 
-  <!-- HERO POOL -->
-  <div id="heroGrid"></div>
+  <!-- Draft Area -->
+  <div id="draftContainer">
 
-  <!-- DRAFT AREA -->
-  <div id="draftArea">
-
-    <!-- BLUE TEAM -->
-    <div class="teamColumn">
-      <h2>Blue Team</h2>
-
-      <!-- BANS -->
+    <!-- Blue Team Bans -->
+    <div class="teamColumn banColumn" id="blueBansContainer">
+      <h2>Blue Bans</h2>
       <div class="banRow" id="blueBans"></div>
-      <div class="banDivider"></div>
-
-      <!-- PICKS -->
-      <div class="pickColumn" id="bluePicks"></div>
     </div>
 
-    <!-- RED TEAM -->
-    <div class="teamColumn">
-      <h2>Red Team</h2>
+    <!-- Hero Pool -->
+    <div id="heroPoolContainer">
+      <div id="heroGrid"></div>
+    </div>
 
-      <!-- BANS -->
+    <!-- Red Team Bans -->
+    <div class="teamColumn banColumn" id="redBansContainer">
+      <h2>Red Bans</h2>
       <div class="banRow" id="redBans"></div>
-      <div class="banDivider"></div>
-
-      <!-- PICKS -->
-      <div class="pickColumn" id="redPicks"></div>
     </div>
 
   </div>
 
-  <!-- ANALYZE -->
-  <div style="text-align:center; margin: 12px;">
+  <!-- Picks Area -->
+  <div id="picksContainer">
+    <!-- Blue Team Picks -->
+    <div class="teamColumn pickColumn">
+      <h2>Blue Picks</h2>
+      <div class="pickStack" id="bluePicks"></div>
+    </div>
+
+    <!-- Red Team Picks -->
+    <div class="teamColumn pickColumn">
+      <h2>Red Picks</h2>
+      <div class="pickStack" id="redPicks"></div>
+    </div>
+  </div>
+
+  <!-- Analyze Button -->
+  <div style="text-align:center; margin: 10px;">
     <button id="analyzeBtn" onclick="analyzeDraft()" disabled>
       Analyze Draft
     </button>
   </div>
 
-  <!-- RESULT -->
+  <!-- Result Output -->
   <div id="result"></div>
 
-  <!-- JS (ORDER MATTERS) -->
+  <!-- JavaScript -->
   <script src="heroes.js"></script>
   <script src="app.js"></script>
 
