@@ -4,52 +4,64 @@
   <meta charset="UTF-8" />
   <title>MLBB Draft Simulator</title>
 
-  <!-- CSS -->
-  <link rel="stylesheet" href="style.css">
-
   <!-- Mobile-friendly scaling -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
   <h1>MLBB Draft Simulator</h1>
 
-  <!-- Turn / Phase Indicator -->
+  <!-- TURN + TIMER -->
   <div id="turnIndicator">Loading...</div>
+  <div id="timerDisplay">50</div>
 
-  <!-- Timer Display -->
-  <div id="timerDisplay">50s</div>
+  <!-- HERO POOL -->
+  <div id="heroGrid"></div>
 
-  <!-- DRAFT AREA (Bans / Picks) -->
+  <!-- DRAFT AREA -->
   <div id="draftArea">
-    <!-- Blue Bans -->
-    <div class="blueBan" id="blueBans"></div>
 
-    <!-- Hero Pool in Center -->
-    <div id="heroGrid"></div>
+    <!-- BLUE TEAM -->
+    <div class="teamColumn">
+      <h2>Blue Team</h2>
 
-    <!-- Red Bans -->
-    <div class="redBan" id="redBans"></div>
+      <!-- BANS -->
+      <div class="banRow" id="blueBans"></div>
+      <div class="banDivider"></div>
 
-    <!-- Blue Picks -->
-    <div class="bluePick" id="bluePicks"></div>
+      <!-- PICKS -->
+      <div class="pickColumn" id="bluePicks"></div>
+    </div>
 
-    <!-- Red Picks -->
-    <div class="redPick" id="redPicks"></div>
+    <!-- RED TEAM -->
+    <div class="teamColumn">
+      <h2>Red Team</h2>
+
+      <!-- BANS -->
+      <div class="banRow" id="redBans"></div>
+      <div class="banDivider"></div>
+
+      <!-- PICKS -->
+      <div class="pickColumn" id="redPicks"></div>
+    </div>
+
   </div>
 
-  <!-- Analyze Button -->
-  <div style="text-align:center; margin: 10px;">
+  <!-- ANALYZE -->
+  <div style="text-align:center; margin: 12px;">
     <button id="analyzeBtn" onclick="analyzeDraft()" disabled>
       Analyze Draft
     </button>
   </div>
 
-  <!-- Result Output -->
+  <!-- RESULT -->
   <div id="result"></div>
 
-  <!-- JavaScript -->
+  <!-- JS (ORDER MATTERS) -->
   <script src="heroes.js"></script>
   <script src="app.js"></script>
 
