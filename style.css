@@ -1,75 +1,79 @@
 /* =========================
-   HERO POOL GRID
+   HERO GRID
    ========================= */
 
-#heroPool {
+#heroGrid {
   display: grid;
   grid-template-columns: repeat(10, 1fr);
   gap: 8px;
+  padding: 12px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 /* =========================
-   HERO BUTTON (TILE)
+   HERO TILE (FIXED SIZE)
    ========================= */
 
 .heroBtn {
   width: 100%;
-  height: 78px;                  /* Locks tile height */
+  height: 84px;                  /* FIXED tile height */
   box-sizing: border-box;
-  background: #111;
-  border: 1px solid #333;
+
+  background-color: #1e293b;
+  border: 1px solid #334155;
   border-radius: 6px;
 
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
 
+  padding-top: 6px;
   cursor: pointer;
 }
 
-/* Disable interaction when picked / banned */
-.heroBtn.disabled {
+.heroBtn:hover {
+  background-color: #334155;
+}
+
+.heroBtn.locked {
   opacity: 0.4;
-  pointer-events: none;
+  cursor: not-allowed;
 }
 
 /* =========================
-   HERO ICON
+   HERO ICON (IMMUTABLE)
    ========================= */
 
 .heroBtn img {
   width: 48px;
   height: 48px;
-  object-fit: cover;             /* Prevent stretching */
-  flex-shrink: 0;                /* Prevent grid distortion */
+  object-fit: cover;
+  flex-shrink: 0;
   display: block;
 }
 
 /* =========================
-   HERO NAME (POOL ONLY)
+   HERO NAME (2-LINE CLAMP)
    ========================= */
 
 .heroName {
   margin-top: 4px;
-  font-size: 11px;               /* ~1/5 of icon size */
+  font-size: 11px;
   line-height: 12px;
-  height: 12px;                  /* Locks text height */
-  color: #ddd;
+
+  height: 24px;                  /* EXACTLY 2 lines */
+  max-width: 100%;
 
   text-align: center;
-  white-space: nowrap;
+  color: #e5e7eb;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 2;         /* Limit to 2 lines */
+  -webkit-box-orient: vertical;
+
   overflow: hidden;
-  text-overflow: ellipsis;
-
-  pointer-events: none;          /* Click passes through text */
-}
-
-/* =========================
-   HIDE NAMES FOR PICKS/BANS
-   ========================= */
-
-.pickSlot .heroName,
-.banSlot .heroName {
-  display: none;
+  word-break: break-word;
+  pointer-events: none;
 }
