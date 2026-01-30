@@ -1,8 +1,7 @@
 let step = 0;
-let timer = null;
+let timerInterval = null;
 let timeLeft = 50;
 
-// MPL-style pick / ban order
 const draftOrder = [
   // Ban phase 1
   { type: "ban", side: "Blue" },
@@ -33,15 +32,23 @@ const draftOrder = [
   { type: "pick", side: "Red" }
 ];
 
+let availableHeroes = [...heroes];
 const picks = [];
 const bans = [];
-let availableHeroes = [...heroes];
 
 window.onload = () => {
-  const heroGrid = document.getElementById("heroGrid");
-  heroGrid.innerHTML = "";
+  renderHeroPool();
+  beginTurn();
+};
 
-  heroes.forEach(hero => {
+/* =========================
+   HERO POOL
+========================= */
+function renderHeroPool() {
+  const grid = document.getElementById("heroGrid");
+  grid.innerHTML = "";
+
+  availableHeroes.forEach(hero => {
     const btn = document.createElement("button");
     btn.className = "heroBtn";
     btn.dataset.hero = hero.name;
@@ -56,124 +63,137 @@ window.onload = () => {
     btn.appendChild(img);
     btn.appendChild(name);
 
-    btn.onclick = () => selectHero(hero, btn);
-    heroGrid.appendChild(btn);
+    btn.onclick = () => handleHeroClick(hero);
+    grid.appendChild(btn);
   });
+}
 
-  updateTurnIndicator();
+/* =========================
+   TURN + TIMER
+========================= */
+function beginTurn() {
+  if (step >= draftOrder.length) {
+    endDraft();
+    return;
+  }
+
+  updateTurnText();
   startTimer();
-};
+}
 
 function startTimer() {
-  clearInterval(timer);
+  clearInterval(timerInterval);
   timeLeft = 50;
-  document.getElementById("timer").textContent = timeLeft;
+  updateTimerUI();
 
-  timer = setInterval(() => {
+  timerInterval = setInterval(() => {
     timeLeft--;
-    document.getElementById("timer").textContent = timeLeft;
+    updateTimerUI();
 
     if (timeLeft <= 0) {
-      clearInterval(timer);
-      autoResolve();
+      clearInterval(timerInterval);
+      resolveTimeout();
     }
   }, 1000);
 }
 
-function autoResolve() {
+function updateTimerUI() {
+  document.getElementById("timer").textContent = timeLeft;
+}
+
+function resolveTimeout() {
   const current = draftOrder[step];
-  if (!current) return;
 
   if (current.type === "pick") {
-    const randomHero =
-      availableHeroes[Math.floor(Math.random() * availableHeroes.length)];
-    forceSelect(randomHero);
+    autoPick();
   } else {
+    // ban skipped
     step++;
-    nextTurn();
+    beginTurn();
   }
 }
 
-function selectHero(hero, btn) {
-  if (btn.classList.contains("locked")) return;
-  forceSelect(hero);
+/* =========================
+   PICK / BAN HANDLING
+========================= */
+function handleHeroClick(hero) {
+  if (!availableHeroes.find(h => h.name === hero.name)) return;
+  applySelection(hero);
 }
 
-function forceSelect(hero) {
+function autoPick() {
+  if (availableHeroes.length === 0) return;
+  const randomHero =
+    availableHeroes[Math.floor(Math.random() * availableHeroes.length)];
+  applySelection(randomHero);
+}
+
+function applySelection(hero) {
   const current = draftOrder[step];
-  if (!current) return;
 
   if (current.type === "ban") {
     bans.push({ hero: hero.name, side: current.side });
-    addToDraft(current.side, hero.icon, true);
+    addIcon(current.side, hero.icon, true);
   } else {
     picks.push({ hero: hero.name, side: current.side });
-    addToDraft(current.side, hero.icon, false);
+    addIcon(current.side, hero.icon, false);
   }
 
   availableHeroes = availableHeroes.filter(h => h.name !== hero.name);
+  clearInterval(timerInterval);
 
-  const btn = document.querySelector(`[data-hero="${hero.name}"]`);
-  if (btn) {
-    btn.classList.add("locked");
-    btn.disabled = true;
-  }
-
-  clearInterval(timer);
   step++;
-  nextTurn();
+  renderHeroPool();
+  beginTurn();
 }
 
-function addToDraft(side, iconPath, isBan) {
+/* =========================
+   UI INSERTION
+========================= */
+function addIcon(side, icon, isBan) {
   const img = document.createElement("img");
-  img.src = iconPath;
+  img.src = icon;
 
   if (isBan) {
-    document.getElementById(
-      side === "Blue" ? "blueBans" : "redBans"
-    ).appendChild(img);
+    document.getElementById(side === "Blue" ? "blueBans" : "redBans")
+      .appendChild(img);
   } else {
-    document.getElementById(
-      side === "Blue" ? "bluePicks" : "redPicks"
-    ).appendChild(img);
+    document.getElementById(side === "Blue" ? "bluePicks" : "redPicks")
+      .appendChild(img);
   }
 }
 
-function nextTurn() {
-  if (step >= draftOrder.length) {
-    document.getElementById("turnIndicator").textContent = "Draft Complete";
-    document.getElementById("timer").textContent = "-";
-    document.getElementById("analyzeBtn").disabled = false;
-    return;
-  }
-
-  updateTurnIndicator();
-  startTimer();
-}
-
-function updateTurnIndicator() {
+function updateTurnText() {
   const current = draftOrder[step];
   document.getElementById(
     "turnIndicator"
   ).textContent = `${current.side} — ${current.type.toUpperCase()}`;
 }
 
+/* =========================
+   DRAFT END + ANALYSIS
+========================= */
+function endDraft() {
+  document.getElementById("turnIndicator").textContent = "Draft Complete";
+  document.getElementById("timer").textContent = "-";
+  document.getElementById("analyzeBtn").disabled = false;
+}
+
 function analyzeDraft() {
-  const blueHeroes = picks.filter(p => p.side === "Blue").map(p => p.hero);
-  const redHeroes = picks.filter(p => p.side === "Red").map(p => p.hero);
+  const blue = picks.filter(p => p.side === "Blue").map(p => p.hero);
+  const red = picks.filter(p => p.side === "Red").map(p => p.hero);
 
-  const blueScore = scoreTeam(blueHeroes);
-  const redScore = scoreTeam(redHeroes);
+  const blueScore = scoreTeam(blue);
+  const redScore = scoreTeam(red);
 
-  let result = `Blue: ${blueScore} | Red: ${redScore}<br>`;
-  result +=
-    blueScore > redScore
-      ? "Blue has the stronger draft"
-      : redScore > blueScore
-      ? "Red has the stronger draft"
-      : "Drafts are evenly matched";
+  let text = `Blue: ${blueScore} | Red: ${redScore}<br>`;
+  text += blueScore > redScore
+    ? "Blue has the stronger draft"
+    : redScore > blueScore
+    ? "Red has the stronger draft"
+    : "Drafts are evenly matched";
 
-  document.getElementById("result").innerHTML = result;
+  document.getElementById("result").innerHTML = text;
 }
 
 function scoreTeam(team) {
