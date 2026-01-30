@@ -1,8 +1,7 @@
 let step = 0;
 let timerValue = 50;
-let timerInterval = null;
+let timerInterval;
 
-// MPL-style pick/ban order
 const draftOrder = [
   { type: "ban", side: "Blue" },
   { type: "ban", side: "Red" },
@@ -40,13 +39,11 @@ window.onload = () => {
     const img = document.createElement("img");
     img.src = hero.icon;
     img.alt = hero.name;
-
-    const span = document.createElement("div");
-    span.className = "heroName";
-    span.innerText = hero.name;
-
     btn.appendChild(img);
-    btn.appendChild(span);
+
+    const name = document.createElement("span");
+    name.innerText = hero.name;
+    btn.appendChild(name);
 
     btn.onclick = () => selectHero(hero.name, btn);
     heroGrid.appendChild(btn);
@@ -56,79 +53,49 @@ window.onload = () => {
   startTimer();
 };
 
-function startTimer() {
-  timerValue = 50;
-  document.getElementById("timer").innerText = `${timerValue}s`;
-  clearInterval(timerInterval);
-  timerInterval = setInterval(() => {
-    timerValue--;
-    document.getElementById("timer").innerText = `${timerValue}s`;
-    if (timerValue <= 0) {
-      autoSelectHero();
-      nextStep();
-    }
-  }, 1000);
-}
-
-function nextStep() {
-  step++;
-  if (step >= draftOrder.length) {
-    document.getElementById("analyzeBtn").disabled = false;
-    document.getElementById("turnIndicator").innerText = "Draft Complete!";
-    clearInterval(timerInterval);
-    return;
-  }
-  updateTurnIndicator();
-  startTimer();
-}
-
-function autoSelectHero() {
-  const current = draftOrder[step];
-  if (current.type === "ban") return; // Skip ban if no action
-  const availableHeroes = heroes.filter(h => {
-    const used = [...picks, ...bans].map(p => p.hero);
-    return !used.includes(h.name);
-  });
-  if (availableHeroes.length > 0) {
-    const randHero = availableHeroes[Math.floor(Math.random() * availableHeroes.length)];
-    const heroBtn = Array.from(document.getElementsByClassName("heroBtn")).find(b => b.querySelector(".heroName").innerText === randHero.name);
-    selectHero(randHero.name, heroBtn);
-  }
-}
-
 function selectHero(heroName, btn) {
   if (btn.classList.contains("locked") || step >= draftOrder.length) return;
 
   const current = draftOrder[step];
-  const isBan = current.type === "ban";
 
-  if (isBan) bans.push({ hero: heroName, side: current.side });
-  else picks.push({ hero: heroName, side: current.side });
+  if (current.type === "ban") {
+    bans.push({ hero: heroName, side: current.side });
+    addToBanList(current.side, heroName);
+  } else {
+    picks.push({ hero: heroName, side: current.side });
+    addToPickList(current.side, heroName);
+  }
 
   btn.classList.add("locked");
   btn.disabled = true;
 
-  addToList(current.side, heroName, isBan);
+  step++;
+  updateTurnIndicator();
+  resetTimer();
 
-  nextStep();
+  if (step >= draftOrder.length) {
+    stopTimer();
+    document.getElementById("analyzeBtn").disabled = false;
+    document.getElementById("turnIndicator").innerText = "Draft Complete!";
+  }
 }
 
-function addToList(side, heroName, isBan) {
-  const listId = side === "Blue" ? (isBan ? "blueBans" : "bluePicks") : (isBan ? "redBans" : "redPicks");
-  const mirrorId = side === "Blue" ? (isBan ? "blueBansMirror" : "bluePicksMirror") : (isBan ? "redBansMirror" : "redPicksMirror");
-
-  const container = document.getElementById(listId);
-  const mirrorContainer = document.getElementById(mirrorId);
-
-  const heroDiv = document.createElement("div");
-  heroDiv.className = "listHero";
-
+function addToBanList(side, heroName) {
+  const container = side === "Blue" ? document.getElementById("blueBans") : document.getElementById("redBans");
   const img = document.createElement("img");
-  img.src = heroes.find(h => h.name === heroName).icon;
-  heroDiv.appendChild(img);
+  const hero = heroes.find(h => h.name === heroName);
+  img.src = hero.icon;
+  img.alt = heroName;
+  container.appendChild(img);
+}
 
-  container.appendChild(heroDiv);
-  mirrorContainer.appendChild(heroDiv.cloneNode(true));
+function addToPickList(side, heroName) {
+  const container = side === "Blue" ? document.getElementById("bluePicks") : document.getElementById("redPicks");
+  const img = document.createElement("img");
+  const hero = heroes.find(h => h.name === heroName);
+  img.src = hero.icon;
+  img.alt = heroName;
+  container.appendChild(img);
 }
 
 function updateTurnIndicator() {
@@ -157,7 +124,51 @@ function scoreTeam(team) {
   let score = 0;
   team.forEach(name => {
     const hero = heroes.find(h => h.name === name);
-    if (hero) score += Number(hero.early || 0) + Number(hero.late || 0) + Number(hero.cc || 0);
+    if (hero) {
+      const early = Number(hero.early) || 0;
+      const late = Number(hero.late) || 0;
+      const cc = Number(hero.cc) || 0;
+      score += early + late + cc;
+    }
   });
   return score;
+}
+
+// Timer Logic
+function startTimer() {
+  document.getElementById("timer").innerText = `${timerValue}s`;
+  timerInterval = setInterval(() => {
+    timerValue--;
+    document.getElementById("timer").innerText = `${timerValue}s`;
+
+    if (timerValue <= 0) {
+      // Auto-pick/ban random hero
+      autoSelectHero();
+      resetTimer();
+    }
+  }, 1000);
+}
+
+function resetTimer() {
+  timerValue = 50;
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+}
+
+function autoSelectHero() {
+  if (step >= draftOrder.length) return;
+  const current = draftOrder[step];
+  const availableHeroes = heroes.filter(h => !picks.some(p => p.hero === h.name) && !bans.some(b => b.hero === h.name));
+  if (availableHeroes.length === 0) return;
+  const randomHero = availableHeroes[Math.floor(Math.random() * availableHeroes.length)];
+
+  // Simulate click
+  const heroButtons = document.querySelectorAll(".heroBtn");
+  heroButtons.forEach(btn => {
+    if (!btn.classList.contains("locked") && btn.querySelector("span").innerText === randomHero.name) {
+      btn.click();
+    }
+  });
 }
