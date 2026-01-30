@@ -1,117 +1,123 @@
-/* Page base */
+/* Base Page */
 body {
   background-color: #0f172a;
   color: #e5e7eb;
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
-}
-
-/* Headings */
-h1, h2 {
   text-align: center;
 }
 
-/* =========================
-   HERO GRID (with names inside icons)
-   ========================= */
+h1 {
+  margin: 10px 0;
+}
+
+/* Turn / Timer */
+#turnIndicator {
+  font-weight: bold;
+  margin: 5px 0;
+  font-size: 18px;
+}
+
+#timer {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 12px;
+  color: #f59e0b;
+}
+
+/* Bans Area */
+#banArea {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 20px;
+  margin-bottom: 10px;
+}
+
+.teamBan {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.teamBan img {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  border: 1px solid #334155;
+  object-fit: cover;
+}
+
+/* Hero Grid */
 #heroGrid {
   display: grid;
   grid-template-columns: repeat(10, 1fr);
-  gap: 8px;
-  padding: 12px;
+  gap: 6px;
+  padding: 10px 20px;
   max-width: 1200px;
-  margin: 0 auto;
+  margin: 0 auto 20px auto;
 }
 
 .heroBtn {
   position: relative;
-  padding: 0;
+  font-size: 12px;
   border-radius: 6px;
   border: 1px solid #334155;
   background-color: #1e293b;
-  width: 60px;
-  height: 60px;
+  color: #e5e7eb;
   cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .heroBtn img {
-  width: 100%;
-  height: 100%;
+  width: 60px;
+  height: 60px;
   object-fit: cover;
-  border-radius: 6px;
+  display: block;
 }
 
-.heroBtn .heroName {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
+.heroBtn span {
   font-size: 10px;
-  text-align: center;
-  color: #fff;
-  background: rgba(0,0,0,0.4);
-  white-space: normal;
-  line-height: 1.2;
+  margin-top: 2px;
+  word-break: break-word;
 }
 
-/* Locked (picked/banned) hero */
+.heroBtn:hover {
+  background-color: #334155;
+}
+
 .heroBtn.locked {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
-/* =========================
-   PICKS / BANS DISPLAY
-   ========================= */
-#draftArea {
+/* Picks Area */
+#pickArea {
   display: flex;
   justify-content: space-between;
-  padding: 10px;
-  gap: 10px;
+  padding: 0 20px 20px 20px;
 }
 
-.teamColumn {
-  width: 48%;
-  background: #020617;
-  border-radius: 8px;
-  padding: 10px;
-}
-
-.banRow {
-  display: flex;
-  flex-direction: row;
-  gap: 4px;
-  margin-bottom: 6px;
-}
-
-.pickColumn {
+.teamPick {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+  align-items: center;
 }
 
-/* Mirror layout */
-#tournamentMirror {
-  display: flex;
-  justify-content: space-between;
-  margin: 20px auto;
-  max-width: 900px;
-  padding: 10px;
-  gap: 10px;
-}
-
-/* Picked/Banned icons mirror size */
-.listHero img {
-  width: 40px;
-  height: 40px;
-  object-fit: cover;
+.teamPick img {
+  width: 60px;
+  height: 60px;
   border-radius: 4px;
+  border: 1px solid #334155;
+  object-fit: cover;
 }
 
-/* Timer */
-#timer {
-  text-align: center;
-  font-size: 18px;
-  font-weight: bold;
-  margin-bottom: 10px;
+/* Analyze Result */
+#result {
+  margin-top: 10px;
+  font-size: 16px;
 }
