@@ -1,154 +1,75 @@
 /* =========================
-   PAGE BASE
+   HERO POOL GRID
    ========================= */
 
-body {
-  background-color: #0f172a;
-  color: #e5e7eb;
-  font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 0;
-}
-
-h1, h2 {
-  text-align: center;
-  margin: 8px 0;
-}
-
-/* =========================
-   TURN INDICATOR & TIMER
-   ========================= */
-
-#turnIndicator {
-  text-align: center;
-  font-weight: bold;
-  margin-top: 10px;
-}
-
-#timer {
-  text-align: center;
-  font-size: 14px;
-  margin-bottom: 10px;
-  color: #38bdf8;
-}
-
-/* =========================
-   HERO GRID (CENTER POOL)
-   ========================= */
-
-#heroGrid {
+#heroPool {
   display: grid;
   grid-template-columns: repeat(10, 1fr);
   gap: 8px;
-  padding: 12px;
-  max-width: 1200px;
-  margin: 0 auto;
 }
+
+/* =========================
+   HERO BUTTON (TILE)
+   ========================= */
 
 .heroBtn {
-  background-color: #1e293b;
-  border: 1px solid #334155;
+  width: 100%;
+  height: 78px;                  /* Locks tile height */
+  box-sizing: border-box;
+  background: #111;
+  border: 1px solid #333;
   border-radius: 6px;
-  padding: 4px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
   cursor: pointer;
-  text-align: center;
 }
 
-.heroBtn:hover {
-  background-color: #334155;
-}
-
-.heroBtn.locked {
+/* Disable interaction when picked / banned */
+.heroBtn.disabled {
   opacity: 0.4;
-  cursor: not-allowed;
+  pointer-events: none;
 }
 
-/* Hero icon in pool */
+/* =========================
+   HERO ICON
+   ========================= */
+
 .heroBtn img {
   width: 48px;
   height: 48px;
+  object-fit: cover;             /* Prevent stretching */
+  flex-shrink: 0;                /* Prevent grid distortion */
   display: block;
-  margin: 0 auto;
 }
 
-/* Hero name (ONLY in pool) */
+/* =========================
+   HERO NAME (POOL ONLY)
+   ========================= */
+
 .heroName {
-  font-size: 11px;        /* ~1/5 of 48px icon */
   margin-top: 4px;
-  line-height: 1.1;
+  font-size: 11px;               /* ~1/5 of icon size */
+  line-height: 12px;
+  height: 12px;                  /* Locks text height */
+  color: #ddd;
+
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
 
-
-/* =========================
-   PICKS / BANS AREA
-   ========================= */
-
-#draftArea {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 10px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.teamColumn {
-  width: 48%;
-  background-color: #020617;
-  border-radius: 8px;
-  padding: 10px;
-}
-
-.teamColumn h2 {
-  margin-bottom: 6px;
-}
-
-/* Pick / Ban lists */
-ul {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-/* Pick & ban icons */
-.pickIcon img,
-.banIcon img {
-  width: 40px;
-  height: 40px;
-  border-radius: 4px;
-}
-
-/* Optional subtle distinction */
-.banIcon img {
-  filter: grayscale(100%);
-  opacity: 0.7;
+  pointer-events: none;          /* Click passes through text */
 }
 
 /* =========================
-   ANALYZE BUTTON & RESULT
+   HIDE NAMES FOR PICKS/BANS
    ========================= */
 
-#analyzeBtn {
-  padding: 8px 14px;
-  font-size: 14px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-}
-
-#analyzeBtn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-#result {
-  text-align: center;
-  font-size: 16px;
-  margin: 12px 0;
+.pickSlot .heroName,
+.banSlot .heroName {
+  display: none;
 }
