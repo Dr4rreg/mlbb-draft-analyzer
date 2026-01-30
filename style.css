@@ -4,10 +4,25 @@ body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
+}
+
+h1, h2 {
   text-align: center;
 }
 
-h1, h2, h3 { text-align: center; }
+/* TOP BAR */
+#topBar {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+#timerBox {
+  color: #facc15;
+}
 
 /* HERO GRID */
 #heroGrid {
@@ -19,102 +34,74 @@ h1, h2, h3 { text-align: center; }
   margin: 0 auto;
 }
 
-/* Hero buttons */
 .heroBtn {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 4px;
-  border-radius: 6px;
-  border: 1px solid #334155;
-  background-color: #1e293b;
-  color: #e5e7eb;
-  cursor: pointer;
-  width: 60px;
-  height: 80px;
-  text-align: center;
-  font-size: 12px;
 }
 
 .heroBtn img {
-  width: 60px;
-  height: 60px;
-  object-fit: cover;
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
 }
 
-.heroBtn.locked {
-  opacity: 0.4;
-  cursor: not-allowed;
+.heroBtn span {
+  font-size: 10px;
+  text-align: center;
+  margin-top: 2px;
+  line-height: 1.1;
+  max-width: 48px;
+  word-wrap: break-word;
 }
 
-/* BANS AREA */
-#bansArea {
+/* DRAFT AREA */
+#draftArea {
   display: flex;
   justify-content: space-between;
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 12px;
+}
+
+.teamColumn {
+  width: 48%;
+  background: #020617;
+  border-radius: 8px;
   padding: 10px;
 }
 
-.teamBans {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.teamBans div {
+/* BANS */
+.banRow {
   display: flex;
   gap: 6px;
-  flex-wrap: wrap;
+  margin-bottom: 10px;
 }
 
-.teamBans img {
-  width: 40px;
-  height: 40px;
-  object-fit: cover;
+.banRow img {
+  width: 32px;
+  height: 32px;
+  opacity: 0.5;
 }
 
-/* PICKS AREA */
-#picksArea {
-  display: flex;
-  justify-content: space-between;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 10px;
-}
-
-.teamPicks {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.teamPicks div {
+/* PICKS */
+.pickColumn {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.teamPicks img {
-  width: 60px;
-  height: 60px;
-  object-fit: cover;
+.pickColumn img {
+  width: 48px;
+  height: 48px;
 }
 
-/* Timer & Result */
-#timerDisplay {
-  font-weight: bold;
-  margin: 8px 0;
-}
-
+/* RESULT */
 #result {
   text-align: center;
-  font-size: 16px;
   margin-top: 10px;
-}
-
-#turnIndicator {
-  font-weight: bold;
-  margin: 10px 0;
+  font-size: 16px;
 }
