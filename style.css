@@ -1,36 +1,58 @@
 /* =========================
-   HERO GRID
+   PAGE BASE
    ========================= */
+body {
+  background-color: #0f172a;
+  color: #e5e7eb;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
 
-#heroGrid {
-  display: grid;
-  grid-template-columns: repeat(10, 1fr);
-  gap: 8px;
-  padding: 12px;
-  max-width: 1200px;
-  margin: 0 auto;
+/* Headings */
+h1, h2 {
+  text-align: center;
+  margin: 5px 0;
 }
 
 /* =========================
-   HERO TILE (FIXED SIZE)
+   TURN INDICATOR + TIMER
    ========================= */
+#turnIndicator, #timerDisplay {
+  text-align: center;
+  font-weight: bold;
+  margin: 10px 0;
+  font-size: 18px;
+}
+
+/* =========================
+   HERO POOL
+   ========================= */
+#heroGrid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 6px;
+  justify-items: center;
+  align-items: center;
+  max-width: 1200px;
+  margin: 10px auto;
+}
 
 .heroBtn {
-  width: 100%;
-  height: 84px;                  /* FIXED tile height */
-  box-sizing: border-box;
-
-  background-color: #1e293b;
-  border: 1px solid #334155;
-  border-radius: 6px;
-
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-
-  padding-top: 6px;
+  padding: 4px;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  background-color: #1e293b;
+  color: #e5e7eb;
   cursor: pointer;
+  width: 60px; /* fixed icon width */
+  height: 80px; /* fixed total button height to include name */
+  text-align: center;
+  overflow: hidden;
 }
 
 .heroBtn:hover {
@@ -42,71 +64,55 @@
   cursor: not-allowed;
 }
 
-/* =========================
-   HERO ICON (IMMUTABLE)
-   ========================= */
-
-.heroBtn img {
-  width: 48px;
-  height: 48px;
+.heroIcon {
+  width: 60px;
+  height: 60px;
   object-fit: cover;
-  flex-shrink: 0;
-  display: block;
 }
-
-/* =========================
-   HERO NAME (2-LINE CLAMP)
-   ========================= */
 
 .heroName {
-  margin-top: 4px;
-  font-size: 11px;
-  line-height: 12px;
-
-  height: 24px;                  /* EXACTLY 2 lines */
-  max-width: 100%;
-
-  text-align: center;
-  color: #e5e7eb;
-
-  display: -webkit-box;
-  -webkit-line-clamp: 2;         /* Limit to 2 lines */
-  -webkit-box-orient: vertical;
-
-  overflow: hidden;
+  font-size: 12px; /* approx 1/5 of icon */
+  margin-top: 2px;
   word-break: break-word;
-  pointer-events: none;
+  line-height: 1.1em;
 }
 
 /* =========================
-   UNIFIED HERO ICON SIZE
+   PICKS / BANS AREA
    ========================= */
-
-/* Hero pool icons */
-.heroBtn img {
-  width: 48px;
-  height: 48px;
-  object-fit: cover;
-  flex-shrink: 0;
-  display: block;
+#draftArea {
+  display: grid;
+  grid-template-areas: 
+    "blueBan heroPool redBan"
+    "bluePick heroPool redPick";
+  grid-template-columns: 1fr auto 1fr;
+  grid-template-rows: auto auto;
+  gap: 10px;
+  max-width: 1200px;
+  margin: 10px auto;
+  justify-items: center;
+  align-items: start;
 }
 
-/* Picked hero icons */
-.pickSlot img,
-.pickIcon img {
-  width: 48px;
-  height: 48px;
+.blueBan { grid-area: blueBan; display: flex; gap: 4px; flex-wrap: wrap; }
+.redBan { grid-area: redBan; display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.bluePick { grid-area: bluePick; display: flex; gap: 4px; flex-wrap: wrap; }
+.redPick { grid-area: redPick; display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+
+/* Picked/Banned icons */
+.pickedIcon {
+  width: 60px;
+  height: 60px;
   object-fit: cover;
-  flex-shrink: 0;
-  display: block;
+  border-radius: 6px;
+  border: 1px solid #334155;
 }
 
-/* Banned hero icons */
-.banSlot img,
-.banIcon img {
-  width: 48px;
-  height: 48px;
-  object-fit: cover;
-  flex-shrink: 0;
-  display: block;
+/* =========================
+   RESULT
+   ========================= */
+#result {
+  text-align: center;
+  font-size: 16px;
+  margin-top: 10px;
 }
