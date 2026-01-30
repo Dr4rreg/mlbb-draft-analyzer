@@ -2,53 +2,31 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>MLBB Draft Simulator</title>
-
-  <!-- CSS -->
+  <title>MLBB Draft Simulator - M7 Phase</title>
   <link rel="stylesheet" href="style.css">
-
-  <!-- Mobile-friendly scaling -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
 <body>
-
   <h1>MLBB Draft Simulator</h1>
 
-  <!-- Turn Indicator & Timer -->
+  <!-- Turn / Timer Indicator -->
   <div id="turnIndicator">Loading...</div>
   <div id="timer">50s</div>
+
+  <!-- Ban Rows -->
+  <div id="banArea">
+    <div class="teamBan" id="blueBans"></div>
+    <div class="teamBan" id="redBans"></div>
+  </div>
 
   <!-- HERO GRID -->
   <div id="heroGrid"></div>
 
-  <!-- PICKS / BANS AREA -->
-  <div id="draftArea">
-    <div class="teamColumn">
-      <h2>Blue Team</h2>
-      <div id="blueBans" class="banRow"></div>
-      <div id="bluePicks" class="pickColumn"></div>
-    </div>
-
-    <div class="teamColumn">
-      <h2>Red Team</h2>
-      <div id="redBans" class="banRow"></div>
-      <div id="redPicks" class="pickColumn"></div>
-    </div>
-  </div>
-
-  <!-- Tournament Mirror Layout -->
-  <div id="tournamentMirror">
-    <div class="teamColumn">
-      <h2>Blue Team Mirror</h2>
-      <div id="blueBansMirror" class="banRow"></div>
-      <div id="bluePicksMirror" class="pickColumn"></div>
-    </div>
-    <div class="teamColumn">
-      <h2>Red Team Mirror</h2>
-      <div id="redBansMirror" class="banRow"></div>
-      <div id="redPicksMirror" class="pickColumn"></div>
-    </div>
+  <!-- PICKS AREA -->
+  <div id="pickArea">
+    <div class="teamPick" id="bluePicks"></div>
+    <div class="teamPick" id="redPicks"></div>
   </div>
 
   <!-- Analyze Button -->
@@ -61,9 +39,8 @@
   <!-- Result Output -->
   <div id="result"></div>
 
-  <!-- JavaScript -->
+  <!-- JS -->
   <script src="heroes.js"></script>
   <script src="app.js"></script>
-
 </body>
 </html>
