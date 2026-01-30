@@ -1,18 +1,57 @@
-body { background-color: #0f172a; color: #e5e7eb; font-family: Arial, sans-serif; margin:0; padding:0; }
-h1,h2 { text-align: center; }
-#heroGrid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; padding: 12px; max-width: 1200px; margin: 0 auto; }
-.heroBtn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+/* =========================
+   PAGE BASE
+   ========================= */
 
-  padding: 6px 4px;
-  font-size: 11px;
-  border-radius: 6px;
-  border: 1px solid #334155;
-  background-color: #1e293b;
+body {
+  background-color: #0f172a;
   color: #e5e7eb;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+h1, h2 {
+  text-align: center;
+  margin: 8px 0;
+}
+
+/* =========================
+   TURN INDICATOR & TIMER
+   ========================= */
+
+#turnIndicator {
+  text-align: center;
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+#timer {
+  text-align: center;
+  font-size: 14px;
+  margin-bottom: 10px;
+  color: #38bdf8;
+}
+
+/* =========================
+   HERO GRID (CENTER POOL)
+   ========================= */
+
+#heroGrid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 8px;
+  padding: 12px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.heroBtn {
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 4px;
   cursor: pointer;
+  text-align: center;
 }
 
 .heroBtn:hover {
@@ -24,30 +63,89 @@ h1,h2 { text-align: center; }
   cursor: not-allowed;
 }
 
-.heroName {
-  margin-top: 4px;
-  text-align: center;
-  font-size: 11px;
-}
-
-#draftArea { display:flex; justify-content:space-between; padding:10px; gap:10px; }
-.teamColumn { width:48%; background:#020617; border-radius:8px; padding:10px; }
-ul { list-style:none; padding-left:0; }
-li { font-size:14px; margin-bottom:4px; }
-#result { text-align:center; font-size:16px; margin-top:10px; }
-#turnIndicator { text-align:center; font-weight:bold; margin:10px 0; }
-/* Pick / Ban icons */
-.pickItem img,
-.banItem img {
+/* Hero icon in pool */
+.heroBtn img {
+  width: 48px;
+  height: 48px;
   display: block;
-  margin: 4px auto;
-  border-radius: 6px;
-  border: 1px solid #334155;
+  margin: 0 auto;
 }
 
-#timer {
+/* Hero name (ONLY in pool) */
+.heroName {
+  font-size: 11px;
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =========================
+   PICKS / BANS AREA
+   ========================= */
+
+#draftArea {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.teamColumn {
+  width: 48%;
+  background-color: #020617;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.teamColumn h2 {
+  margin-bottom: 6px;
+}
+
+/* Pick / Ban lists */
+ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Pick & ban icons */
+.pickIcon img,
+.banIcon img {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+}
+
+/* Optional subtle distinction */
+.banIcon img {
+  filter: grayscale(100%);
+  opacity: 0.7;
+}
+
+/* =========================
+   ANALYZE BUTTON & RESULT
+   ========================= */
+
+#analyzeBtn {
+  padding: 8px 14px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+#analyzeBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+#result {
   text-align: center;
-  font-weight: bold;
-  margin-bottom: 10px;
-  color: #fbbf24; /* yellow for visibility */
+  font-size: 16px;
+  margin: 12px 0;
 }
