@@ -3,51 +3,55 @@
 <head>
   <meta charset="UTF-8" />
   <title>MLBB Draft Simulator</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <!-- CSS -->
   <link rel="stylesheet" href="style.css">
+
+  <!-- Mobile-friendly scaling -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
 <body>
 
   <h1>MLBB Draft Simulator</h1>
 
-  <!-- TURN + TIMER -->
-  <div id="topBar">
-    <div id="turnIndicator">Loading...</div>
-    <div id="timerBox">⏱ <span id="timer">50</span>s</div>
-  </div>
+  <!-- Turn / Phase Indicator -->
+  <div id="turnIndicator">Loading...</div>
 
-  <!-- HERO POOL -->
-  <div id="heroGrid"></div>
+  <!-- Timer Display -->
+  <div id="timerDisplay">50s</div>
 
-  <!-- DRAFT AREA -->
+  <!-- DRAFT AREA (Bans / Picks) -->
   <div id="draftArea">
+    <!-- Blue Bans -->
+    <div class="blueBan" id="blueBans"></div>
 
-    <div class="teamColumn">
-      <h2>Blue Team</h2>
-      <div class="banRow" id="blueBans"></div>
-      <div class="pickColumn" id="bluePicks"></div>
-    </div>
+    <!-- Hero Pool in Center -->
+    <div id="heroGrid"></div>
 
-    <div class="teamColumn">
-      <h2>Red Team</h2>
-      <div class="banRow" id="redBans"></div>
-      <div class="pickColumn" id="redPicks"></div>
-    </div>
+    <!-- Red Bans -->
+    <div class="redBan" id="redBans"></div>
 
+    <!-- Blue Picks -->
+    <div class="bluePick" id="bluePicks"></div>
+
+    <!-- Red Picks -->
+    <div class="redPick" id="redPicks"></div>
   </div>
 
-  <!-- ANALYSIS -->
-  <div style="text-align:center; margin: 12px;">
+  <!-- Analyze Button -->
+  <div style="text-align:center; margin: 10px;">
     <button id="analyzeBtn" onclick="analyzeDraft()" disabled>
       Analyze Draft
     </button>
   </div>
 
+  <!-- Result Output -->
   <div id="result"></div>
 
+  <!-- JavaScript -->
   <script src="heroes.js"></script>
   <script src="app.js"></script>
+
 </body>
 </html>
