@@ -2,44 +2,56 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>MLBB Draft Simulator - M7 Phase</title>
+  <title>MLBB Draft Simulator</title>
   <link rel="stylesheet" href="style.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-
 <body>
-  <h1>MLBB Draft Simulator</h1>
 
-  <!-- Turn / Timer Indicator -->
-  <div id="turnIndicator">Loading...</div>
-  <div id="timer">50s</div>
+<h1>MLBB Draft Simulator</h1>
 
-  <!-- Ban Rows -->
-  <div id="banArea">
-    <div class="teamBan" id="blueBans"></div>
-    <div class="teamBan mirrored" id="redBans"></div>
+<!-- Turn / Phase Indicator -->
+<div id="turnIndicator">Loading...</div>
+
+<!-- TIMER -->
+<div id="timer" style="text-align:center; font-weight:bold; margin-bottom:8px;">50</div>
+
+<!-- HERO POOL GRID -->
+<div id="heroGrid"></div>
+
+<!-- DRAFT AREA -->
+<div id="draftArea">
+
+  <!-- Blue side -->
+  <div class="teamColumn">
+    <h2>Blue Bans</h2>
+    <div id="blueBans" class="banRow"></div>
+    <h2>Blue Picks</h2>
+    <div id="bluePicks" class="pickColumn"></div>
   </div>
 
-  <!-- Pick Rows -->
-  <div id="pickArea">
-    <div class="teamPick" id="bluePicks"></div>
-    <div class="teamPick mirrored" id="redPicks"></div>
+  <!-- Red side -->
+  <div class="teamColumn">
+    <h2>Red Bans</h2>
+    <div id="redBans" class="banRow"></div>
+    <h2>Red Picks</h2>
+    <div id="redPicks" class="pickColumn"></div>
   </div>
 
-  <!-- HERO GRID -->
-  <div id="heroGrid"></div>
+</div>
 
-  <!-- Analyze Button -->
-  <div style="text-align:center; margin: 10px;">
-    <button id="analyzeBtn" onclick="analyzeDraft()" disabled>
-      Analyze Draft
-    </button>
-  </div>
+<!-- Analyze Button -->
+<div style="text-align:center; margin: 10px;">
+  <button id="analyzeBtn" onclick="analyzeDraft()" disabled>
+    Analyze Draft
+  </button>
+</div>
 
-  <!-- Result Output -->
-  <div id="result"></div>
+<!-- Result Output -->
+<div id="result"></div>
 
-  <script src="heroes.js"></script>
-  <script src="app.js"></script>
+<script src="heroes.js"></script>
+<script src="app.js"></script>
+
 </body>
 </html>
