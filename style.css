@@ -35,6 +35,35 @@ h1 {
   margin-top: 10px;
 }
 
+/* ================== ROLE FILTER BUTTONS ================== */
+#roleFilter {
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.roleBtn {
+  padding: 8px 16px;      /* bigger clickable area */
+  font-size: 14px;        /* larger text */
+  border-radius: 6px;
+  border: 1px solid #334155;
+  background-color: #1e293b;
+  color: #e5e7eb;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.roleBtn:hover {
+  background-color: #334155;
+}
+
+.roleBtn.active {
+  background-color: #3b82f6; /* highlight selected role */
+  color: white;
+  border-color: #3b82f6;
+}
+
 /* ================== DRAFT UI ================== */
 #draftUI {
   max-width: 1200px;
