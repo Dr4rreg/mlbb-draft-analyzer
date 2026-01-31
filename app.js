@@ -61,6 +61,7 @@ function renderHeroPool() {
 
     const name = document.createElement("div");
     name.className = "heroName";
+    name.style.color = "white"; // meta: hero names white
     name.innerText = hero.name;
 
     btn.appendChild(img);
@@ -91,11 +92,15 @@ function matchesRoleFilter(hero) {
 
 function startTimer() {
   clearInterval(interval);
-  
-  // Only start timer if draft not complete
-  if (step >= draftOrder.length) return;
 
-  timer = 50;
+  // Determine timer length
+  const current = draftOrder[step];
+  if (isSimultaneousPick(step)) {
+    timer = 50; // total for both picks
+  } else {
+    timer = 50;
+  }
+
   document.getElementById("timer").innerText = timer;
 
   interval = setInterval(() => {
@@ -129,14 +134,7 @@ function autoResolve() {
   }
 
   updateTurn();
-
-  // Start timer only if draft not complete
-  if (step < draftOrder.length) {
-    // For simultaneous pick, start timer only once
-    if (!isSimultaneousPick(step - 1)) {
-      startTimer();
-    }
-  }
+  if (draftOrder[step]) startTimer(); // only start timer if draft not complete
 }
 
 function isSimultaneousPick(stepIndex) {
@@ -175,12 +173,7 @@ function forceSelect(hero) {
 
   step++;
   updateTurn();
-
-  // For simultaneous pick, don't reset timer yet
-  if (!isSimultaneousPick(step - 1)) {
-    startTimer();
-  }
-
+  if (draftOrder[step]) startTimer();
   renderHeroPool();
 }
 
@@ -237,7 +230,7 @@ function updateTurn() {
     document.getElementById("turnIndicator").innerText = "Draft Complete!";
     document.getElementById("analyzeBtn").disabled = false;
     clearInterval(interval);
-    document.getElementById("timer").innerText = ""; // No timer after draft
+    analyzeDraft();
     return;
   }
 
@@ -248,56 +241,51 @@ function updateTurn() {
   }
 }
 
-/* ================= LANE & META SCORING ================= */
-
-function checkLaneCoverage(teamPicks) {
-  const lanes = ["Exp", "Jungle", "Mid", "Roam", "Gold"];
-  const assigned = new Set();
-  const scoredLanes = new Set(); // track lanes already scored
-
-  let score = 0;
-
-  for (let heroName of teamPicks) {
-    const hero = heroes.find(h => h.name === heroName);
-    if (!hero || !hero.lanes || !hero.metatier) continue;
-
-    // Only consider lanes not scored yet
-    for (let lane of hero.lanes) {
-      if (!scoredLanes.has(lane)) {
-        scoredLanes.add(lane);
-
-        // Only award points if hero is actually suitable for that lane
-        if (hero.lanes.includes(lane)) {
-          score += getMetaPoints(hero.metatier);
-        }
-        break; // one lane per hero
-      }
-    }
-  }
-
-  return score;
-}
-
-function getMetaPoints(tier) {
-  switch (tier) {
-    case "S": return 10;
-    case "A": return 8;
-    case "B": return 6;
-    case "Situational": return 4;
-    case "F": return 2;
-    default: return 0;
-  }
-}
-
-/* ================= ANALYSIS ================= */
+/* ================= LANE COVERAGE & META SCORING ================= */
 
 function analyzeDraft() {
   const blueHeroes = picks.filter(p => p.side === "Blue").map(p => p.hero);
   const redHeroes = picks.filter(p => p.side === "Red").map(p => p.hero);
 
-  const blueScore = checkLaneCoverage(blueHeroes);
-  const redScore = checkLaneCoverage(redHeroes);
+  const blueScore = calculateScore(blueHeroes);
+  const redScore = calculateScore(redHeroes);
 
   document.getElementById("result").innerText =
     `Blue Team Score: ${blueScore}\nRed Team Score: ${redScore}`;
+}
+
+function calculateScore(teamHeroes) {
+  const lanesCovered = new Set();
+  let score = 0;
+
+  teamHeroes.forEach(heroName => {
+    const hero = heroes.find(h => h.name === heroName);
+    if (!hero || !hero.lanes || !hero.metaTier) return;
+
+    // Only award points for first valid lane
+    const validLane = hero.lanes.find(l => !lanesCovered.has(l));
+    if (!validLane) return;
+
+    lanesCovered.add(validLane);
+
+    switch (hero.metaTier) {
+      case "S":
+        score += 10;
+        break;
+      case "A":
+        score += 8;
+        break;
+      case "B":
+        score += 6;
+        break;
+      case "Situational":
+        score += 4;
+        break;
+      case "F":
+        score += 2;
+        break;
+    }
+  });
+
+  return score;
 }
