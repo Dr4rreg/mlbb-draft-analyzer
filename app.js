@@ -1,6 +1,6 @@
 let step = 0;
-let timer = 50;
 let timerInterval;
+let timeLeft = 50;
 
 // MPL-style pick/ban order
 const draftOrder = [
@@ -37,12 +37,6 @@ const picks = [];
 const bans = [];
 
 window.onload = () => {
-  setupHeroGrid();
-  updateTurnIndicator();
-  startTimer();
-};
-
-function setupHeroGrid() {
   const heroGrid = document.getElementById("heroGrid");
   heroGrid.innerHTML = "";
 
@@ -50,27 +44,38 @@ function setupHeroGrid() {
     const btn = document.createElement("button");
     btn.className = "heroBtn";
 
+    // Hero icon
     const img = document.createElement("img");
     img.src = hero.icon;
     img.alt = hero.name;
     btn.appendChild(img);
 
-    const name = document.createElement("div");
-    name.className = "heroName";
-    name.innerText = hero.name;
-    btn.appendChild(name);
+    // Hero name inside icon
+    const span = document.createElement("span");
+    span.className = "heroName";
+    span.innerText = hero.name;
+    btn.appendChild(span);
 
     btn.onclick = () => selectHero(hero.name, btn);
 
     heroGrid.appendChild(btn);
   });
-}
 
+  updateTurnIndicator();
+  startTimer(); // Start first turn timer
+};
+
+// =========================
+// SELECT HERO
+// =========================
 function selectHero(heroName, btn) {
   if (btn.classList.contains("locked")) return;
   if (step >= draftOrder.length) return;
 
   const current = draftOrder[step];
+
+  // Stop timer for this turn
+  clearInterval(timerInterval);
 
   if (current.type === "ban") {
     bans.push({ hero: heroName, side: current.side });
@@ -84,89 +89,91 @@ function selectHero(heroName, btn) {
   btn.disabled = true;
 
   step++;
-  resetTimer();
-  if (step < draftOrder.length) {
-    updateTurnIndicator();
-  } else {
+  updateTurnIndicator();
+
+  if (step === draftOrder.length) {
     document.getElementById("analyzeBtn").disabled = false;
     document.getElementById("turnIndicator").innerText = "Draft Complete!";
-    clearInterval(timerInterval);
+    document.getElementById("timer").innerText = "-";
+  } else {
+    // Start timer for next pick/ban
+    timeLeft = 50;
+    startTimer();
   }
 }
 
+// =========================
+// ADD HERO TO BANS/PICKS AREA
+// =========================
 function addToList(side, heroName, isBan) {
   const containerId = side === "Blue" ? "blueContainer" : "redContainer";
-  const rowClass = isBan ? "banRow" : "pickRow";
-  const rowSelector = isBan ? "banRow" : "pickRow";
-
   const container = document.getElementById(containerId);
-  let row = container.querySelector(`.${rowClass}:last-child`);
-
-  if (!row || row.children.length >= 6) { // 6 per row max
-    row = document.createElement("div");
-    row.className = rowClass;
-    if (side === "Red") row.classList.add("reverse");
-    container.appendChild(row);
-  }
-
-  const div = document.createElement("div");
-  div.className = isBan ? "banIcon" : "pickIcon";
 
   const img = document.createElement("img");
-  const heroObj = heroes.find(h => h.name === heroName);
-  img.src = heroObj.icon;
+  const hero = heroes.find(h => h.name === heroName);
+  img.src = hero.icon;
+  img.alt = heroName;
+  img.className = "heroIcon";
+  if (isBan) img.classList.add("banIcon");
+  else img.classList.add("pickIcon");
 
-  div.appendChild(img);
-  row.appendChild(div);
+  // Insert picks below bans
+  if (isBan) {
+    container.insertBefore(img, container.firstChild);
+  } else {
+    container.appendChild(img);
+  }
 }
 
+// =========================
+// TURN INDICATOR
+// =========================
 function updateTurnIndicator() {
   if (step >= draftOrder.length) return;
   const current = draftOrder[step];
-  document.getElementById("turnIndicator").innerText = `${current.side} ${current.type.toUpperCase()}`;
+  document.getElementById("turnIndicator").innerText =
+    `${current.side} Team — ${current.type.toUpperCase()} Phase`;
 }
 
+// =========================
+// TIMER LOGIC
+// =========================
 function startTimer() {
-  document.getElementById("timer").innerText = timer;
+  document.getElementById("timer").innerText = timeLeft;
   timerInterval = setInterval(() => {
-    timer--;
-    document.getElementById("timer").innerText = timer;
+    timeLeft--;
+    document.getElementById("timer").innerText = timeLeft;
 
-    if (timer <= 0) {
-      handleTimeout();
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+
+      // Auto pick a random hero if pick
+      const current = draftOrder[step];
+      if (current) {
+        const availableHeroes = heroes.filter(h => {
+          const locked = document.querySelector(`.heroBtn[disabled][alt="${h.name}"]`);
+          return !locked;
+        });
+
+        if (availableHeroes.length > 0) {
+          const randomHero = availableHeroes[Math.floor(Math.random() * availableHeroes.length)];
+          const btn = Array.from(document.getElementsByClassName("heroBtn"))
+                           .find(b => b.alt === randomHero.name);
+          selectHero(randomHero.name, btn);
+        } else {
+          // If no heroes available, skip
+          step++;
+          updateTurnIndicator();
+          startTimer();
+        }
+      }
     }
   }, 1000);
 }
 
-function resetTimer() {
-  timer = 50;
-}
-
-function handleTimeout() {
-  clearInterval(timerInterval);
-  const current = draftOrder[step];
-  if (!current) return;
-
-  // Pick random hero if pick
-  if (current.type === "pick") {
-    const available = heroes.filter(h => !picks.some(p => p.hero === h.name) && !bans.some(b => b.hero === h.name));
-    if (available.length > 0) {
-      const randomHero = available[Math.floor(Math.random() * available.length)];
-      const btn = Array.from(document.getElementsByClassName("heroBtn")).find(b => b.alt === randomHero.name);
-      selectHero(randomHero.name, btn);
-    }
-  }
-
-  // Ban skipped if timer ends
-  if (current.type === "ban") {
-    step++;
-    updateTurnIndicator();
-    resetTimer();
-  }
-
-  startTimer();
-}
-
+// =========================
+// DRAFT ANALYSIS
+// =========================
 function analyzeDraft() {
   const blueHeroes = picks.filter(p => p.side === "Blue").map(p => p.hero);
   const redHeroes = picks.filter(p => p.side === "Red").map(p => p.hero);
