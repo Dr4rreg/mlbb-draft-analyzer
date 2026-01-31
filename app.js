@@ -36,8 +36,7 @@ const draftOrder = [
 
 window.onload = () => {
   renderHeroPool();
-  updateTurn();
-  startStepTimer(); // start timer for first step
+  nextStep(); // start draft properly
 };
 
 /* ================= HERO POOL ================= */
@@ -52,9 +51,7 @@ function renderHeroPool() {
     const btn = document.createElement("button");
     btn.className = "heroBtn";
 
-    if (isHeroLocked(hero.name)) {
-      btn.classList.add("locked");
-    }
+    if (isHeroLocked(hero.name)) btn.classList.add("locked");
 
     const img = document.createElement("img");
     img.src = hero.icon;
@@ -62,7 +59,7 @@ function renderHeroPool() {
     const name = document.createElement("div");
     name.className = "heroName";
     name.innerText = hero.name;
-    name.style.color = "white"; // HERO NAME COLOR
+    name.style.color = "white"; // hero names white
 
     btn.appendChild(img);
     btn.appendChild(name);
@@ -90,7 +87,7 @@ function matchesRoleFilter(hero) {
 
 function startStepTimer() {
   clearInterval(interval);
-  timer = 50; // reset timer at start of step
+  timer = 50;
   document.getElementById("timer").innerText = timer;
 
   interval = setInterval(() => {
@@ -112,43 +109,34 @@ function autoResolve() {
 
   if (current.type === "pick") {
     const needed = isSimultaneousPick(step) ? 2 : 1;
-
     for (let i = 0; i < needed; i++) {
       const available = getAvailableHeroes();
       if (!available.length) break;
-      forceSelect(randomHero(available), false); // false = don't restart timer inside
+      forceSelect(randomHero(available));
     }
   } else {
     addSkippedBan(current.side);
     step++;
   }
 
-  nextStep();
+  nextStep(); // move to next step
 }
 
 function isSimultaneousPick(stepIndex) {
   const cur = draftOrder[stepIndex];
   const next = draftOrder[stepIndex + 1];
-
-  return (
-    cur &&
-    next &&
-    cur.type === "pick" &&
-    next.type === "pick" &&
-    cur.side === next.side
-  );
+  return cur && next && cur.type === "pick" && next.type === "pick" && cur.side === next.side;
 }
 
 /* ================= SELECTION ================= */
 
 function selectHero(hero, btn) {
   if (btn.classList.contains("locked")) return;
-
   clearInterval(interval);
   forceSelect(hero);
 }
 
-function forceSelect(hero, restartTimer = true) {
+function forceSelect(hero) {
   const current = draftOrder[step];
   if (!current) return;
 
@@ -161,7 +149,7 @@ function forceSelect(hero, restartTimer = true) {
   }
 
   step++;
-  if (restartTimer) nextStep(); // only restart timer once per step
+  nextStep();
   renderHeroPool();
 }
 
@@ -187,18 +175,13 @@ function addIcon(side, icon, isBan) {
   img.src = icon;
   div.appendChild(img);
 
-  const id =
-    side === "Blue"
-      ? isBan ? "blueBans" : "bluePicks"
-      : isBan ? "redBans" : "redPicks";
-
+  const id = side === "Blue" ? (isBan ? "blueBans" : "bluePicks") : (isBan ? "redBans" : "redPicks");
   document.getElementById(id).appendChild(div);
 }
 
 function addSkippedBan(side) {
   const div = document.createElement("div");
   div.className = "banIcon skipped";
-
   const id = side === "Blue" ? "blueBans" : "redBans";
   document.getElementById(id).appendChild(div);
 }
@@ -206,25 +189,18 @@ function addSkippedBan(side) {
 /* ================= TURN ================= */
 
 function nextStep() {
-  if (
-    picks.filter(p => p.side === "Blue").length === 5 &&
-    picks.filter(p => p.side === "Red").length === 5 &&
-    bans.filter(b => b.side === "Blue").length === 5 &&
-    bans.filter(b => b.side === "Red").length === 5
-  ) {
+  const current = draftOrder[step];
+
+  if (!current) {
     document.getElementById("turnIndicator").innerText = "Draft Complete!";
     document.getElementById("analyzeBtn").disabled = false;
     clearInterval(interval);
     return;
   }
 
-  const c = draftOrder[step];
-  if (c) {
-    document.getElementById("turnIndicator").innerText =
-      `${c.side} Team — ${c.type.toUpperCase()}`;
-  }
+  document.getElementById("turnIndicator").innerText = `${current.side} Team — ${current.type.toUpperCase()}`;
 
-  startStepTimer(); // start timer for this step
+  startStepTimer(); // only start timer if draft not complete
 }
 
 /* ================= LANE COVERAGE ANALYTICS ================= */
@@ -232,22 +208,24 @@ function nextStep() {
 function checkLaneCoverage(teamPicks) {
   const lanes = ["Exp", "Jungle", "Mid", "Roam", "Gold"];
   const assigned = new Set();
-  const missing = new Set(lanes);
+  const missing = [];
 
   for (let heroName of teamPicks) {
     const hero = heroes.find(h => h.name === heroName);
     if (!hero || !hero.lanes) continue;
-
     for (let lane of hero.lanes) {
       if (!assigned.has(lane)) {
         assigned.add(lane);
-        missing.delete(lane);
         break;
       }
     }
   }
 
-  return { full: assigned.size === lanes.length, missing: Array.from(missing) };
+  lanes.forEach(l => {
+    if (!assigned.has(l)) missing.push(l);
+  });
+
+  return { full: assigned.size === lanes.length, missing };
 }
 
 /* ================= ANALYSIS ================= */
@@ -256,20 +234,17 @@ function analyzeDraft() {
   const blueHeroes = picks.filter(p => p.side === "Blue").map(p => p.hero);
   const redHeroes = picks.filter(p => p.side === "Red").map(p => p.hero);
 
-  let blueScore = 0;
-  let redScore = 0;
+  const blueResult = checkLaneCoverage(blueHeroes);
+  const redResult = checkLaneCoverage(redHeroes);
 
-  const blueCoverage = checkLaneCoverage(blueHeroes);
-  const redCoverage = checkLaneCoverage(redHeroes);
-
-  if (blueCoverage.full) blueScore += 10;
-  if (redCoverage.full) redScore += 10;
+  let blueScore = blueResult.full ? 10 : 0;
+  let redScore = redResult.full ? 10 : 0;
 
   let resultText = `Blue Team Score: ${blueScore}`;
-  if (!blueCoverage.full) resultText += ` (Missing lanes: ${blueCoverage.missing.join(", ")})`;
+  if (!blueResult.full) resultText += ` (Missing: ${blueResult.missing.join(", ")})`;
 
   resultText += `\nRed Team Score: ${redScore}`;
-  if (!redCoverage.full) resultText += ` (Missing lanes: ${redCoverage.missing.join(", ")})`;
+  if (!redResult.full) resultText += ` (Missing: ${redResult.missing.join(", ")})`;
 
   document.getElementById("result").innerText = resultText;
 }
