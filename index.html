@@ -39,15 +39,13 @@
   </div>
 
 <!-- ROLE FILTER -->
-<div id="roleFilter" class="center">
-  <button data-role="All" class="roleBtn active">All</button>
-  <button data-role="Tank" class="roleBtn">Tank</button>
-  <button data-role="Fighter" class="roleBtn">Fighter</button>
-  <button data-role="Assassin" class="roleBtn">Assassin</button>
-  <button data-role="Mage" class="roleBtn">Mage</button>
-  <button data-role="Marksman" class="roleBtn">Marksman</button>
-  <button data-role="Support" class="roleBtn">Support</button>
-</div>
+<button onclick="setRoleFilter('All')">All</button>
+<button onclick="setRoleFilter('Tank')">Tank</button>
+<button onclick="setRoleFilter('Fighter')">Fighter</button>
+<button onclick="setRoleFilter('Assassin')">Assassin</button>
+<button onclick="setRoleFilter('Mage')">Mage</button>
+<button onclick="setRoleFilter('Marksman')">Marksman</button>
+<button onclick="setRoleFilter('Support')">Support</button>
   
   <!-- HERO POOL -->
   <div id="heroGrid"></div>
