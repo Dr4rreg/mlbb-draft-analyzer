@@ -60,16 +60,16 @@ h1 {
 
 /* Bans larger square */
 .banIcon {
-  width: 80px;      
-  height: 80px;
+  width: 100px;      /* increased from 80px */
+  height: 100px;     /* increased from 80px */
   border-radius: 6px;
   overflow: hidden;
 }
 
 /* Picks same size as bans */
 .pickIcon {
-  width: 80px;      
-  height: 80px;    
+  width: 100px;      /* increased from 80px */
+  height: 100px;     /* increased from 80px */
   border-radius: 6px;
   overflow: hidden;
 }
