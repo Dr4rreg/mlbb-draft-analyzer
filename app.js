@@ -61,7 +61,6 @@ function renderHeroPool() {
 
     const name = document.createElement("div");
     name.className = "heroName";
-    name.style.color = "white"; // meta: hero names white
     name.innerText = hero.name;
 
     btn.appendChild(img);
@@ -92,15 +91,7 @@ function matchesRoleFilter(hero) {
 
 function startTimer() {
   clearInterval(interval);
-
-  // Determine timer length
-  const current = draftOrder[step];
-  if (isSimultaneousPick(step)) {
-    timer = 50; // total for both picks
-  } else {
-    timer = 50;
-  }
-
+  timer = 50;
   document.getElementById("timer").innerText = timer;
 
   interval = setInterval(() => {
@@ -129,12 +120,13 @@ function autoResolve() {
       forceSelect(randomHero(available));
     }
   } else {
+    // Ban skipped intentionally; placeholder remains
     addSkippedBan(current.side);
     step++;
   }
 
   updateTurn();
-  if (draftOrder[step]) startTimer(); // only start timer if draft not complete
+  startTimer();
 }
 
 function isSimultaneousPick(stepIndex) {
@@ -163,17 +155,19 @@ function forceSelect(hero) {
   const current = draftOrder[step];
   if (!current) return;
 
+  const playedLane = hero.lanes[0]; // default lane if not specified
+
   if (current.type === "ban") {
     bans.push({ hero: hero.name, side: current.side });
     addIcon(current.side, hero.icon, true);
   } else {
-    picks.push({ hero: hero.name, side: current.side });
+    picks.push({ hero: hero.name, side: current.side, lane: playedLane });
     addIcon(current.side, hero.icon, false);
   }
 
   step++;
   updateTurn();
-  if (draftOrder[step]) startTimer();
+  startTimer();
   renderHeroPool();
 }
 
@@ -230,7 +224,6 @@ function updateTurn() {
     document.getElementById("turnIndicator").innerText = "Draft Complete!";
     document.getElementById("analyzeBtn").disabled = false;
     clearInterval(interval);
-    analyzeDraft();
     return;
   }
 
@@ -241,51 +234,66 @@ function updateTurn() {
   }
 }
 
-/* ================= LANE COVERAGE & META SCORING ================= */
+/* ================= LANE COVERAGE ANALYTICS ================= */
+
+function checkLaneCoverage(teamPicks) {
+  const lanes = ["Exp", "Jungle", "Mid", "Roam", "Gold"];
+  const assigned = new Set();
+
+  for (let heroName of teamPicks) {
+    const hero = heroes.find(h => h.name === heroName);
+    if (!hero || !hero.lanes) continue;
+
+    for (let lane of hero.lanes) {
+      if (!assigned.has(lane)) {
+        assigned.add(lane);
+        break;
+      }
+    }
+  }
+
+  return assigned.size === lanes.length;
+}
+
+/* ================= METATIER SCORING ================= */
+
+function calculateMetaScore(side) {
+  const teamPicks = picks.filter(p => p.side === side);
+  let score = 0;
+
+  teamPicks.forEach(pick => {
+    const hero = heroes.find(h => h.name === pick.hero);
+    if (!hero || !hero.metaTier) return;
+
+    if (!hero.lanes.includes(pick.lane)) return; // 0 points if wrong lane
+
+    switch (hero.metaTier) {
+      case "S": score += 10; break;
+      case "A": score += 8; break;
+      case "B": score += 6; break;
+      case "Situational": score += 4; break;
+      case "F": score += 2; break;
+    }
+  });
+
+  return score;
+}
+
+/* ================= ANALYSIS ================= */
 
 function analyzeDraft() {
   const blueHeroes = picks.filter(p => p.side === "Blue").map(p => p.hero);
   const redHeroes = picks.filter(p => p.side === "Red").map(p => p.hero);
 
-  const blueScore = calculateScore(blueHeroes);
-  const redScore = calculateScore(redHeroes);
+  let blueScore = 0;
+  let redScore = 0;
+
+  if (checkLaneCoverage(blueHeroes)) blueScore += 10;
+  if (checkLaneCoverage(redHeroes)) redScore += 10;
+
+  blueScore += calculateMetaScore("Blue");
+  redScore += calculateMetaScore("Red");
 
   document.getElementById("result").innerText =
     `Blue Team Score: ${blueScore}\nRed Team Score: ${redScore}`;
-}
-
-function calculateScore(teamHeroes) {
-  const lanesCovered = new Set();
-  let score = 0;
-
-  teamHeroes.forEach(heroName => {
-    const hero = heroes.find(h => h.name === heroName);
-    if (!hero || !hero.lanes || !hero.metaTier) return;
-
-    // Only award points for first valid lane
-    const validLane = hero.lanes.find(l => !lanesCovered.has(l));
-    if (!validLane) return;
-
-    lanesCovered.add(validLane);
-
-    switch (hero.metaTier) {
-      case "S":
-        score += 10;
-        break;
-      case "A":
-        score += 8;
-        break;
-      case "B":
-        score += 6;
-        break;
-      case "Situational":
-        score += 4;
-        break;
-      case "F":
-        score += 2;
-        break;
-    }
-  });
-
-  return score;
 }
