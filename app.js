@@ -13,7 +13,7 @@ const draftOrder = [
 
   { type: "pick", side: "Blue" },
   { type: "pick", side: "Red" },
-  { type: "pick", side: "Red" }, // Simultaneous picks R1 + R2
+  { type: "pick", side: "Red" }, // Simultaneous picks
   { type: "pick", side: "Blue" },
   { type: "pick", side: "Blue" },
   { type: "pick", side: "Red" },
@@ -70,7 +70,7 @@ function renderHeroPool() {
 // START TIMER
 // =========================
 function startTimer() {
-  clearInterval(interval); // ensure no overlapping timers
+  clearInterval(interval);
   timer = 50;
   document.getElementById("timer").innerText = timer;
 
@@ -89,22 +89,23 @@ function startTimer() {
 // AUTO-RESOLVE IF TIME RUNS OUT
 // =========================
 function autoResolve() {
+  if (isDraftComplete()) return;
+
   const current = draftOrder[step];
   if (!current) return;
 
   if (current.type === "pick") {
-    // Determine how many simultaneous picks for this side
-    let count = 1;
-    if (
-      draftOrder[step + 1] &&
-      draftOrder[step + 1].type === "pick" &&
-      draftOrder[step + 1].side === current.side
+    // Determine number of simultaneous picks for this side
+    let simultaneousCount = 1;
+    while (
+      draftOrder[step + simultaneousCount] &&
+      draftOrder[step + simultaneousCount].type === "pick" &&
+      draftOrder[step + simultaneousCount].side === current.side
     ) {
-      count = 2; // auto-pick 2 heroes simultaneously
+      simultaneousCount++;
     }
 
-    for (let i = 0; i < count; i++) {
-      const pickStep = draftOrder[step];
+    for (let i = 0; i < simultaneousCount; i++) {
       const available = heroes.filter(h =>
         !picks.some(p => p.hero === h.name) &&
         !bans.some(b => b.hero === h.name)
@@ -114,6 +115,7 @@ function autoResolve() {
       }
       step++;
     }
+
   } else if (current.type === "ban") {
     // Skip ban if no hero selected
     step++;
