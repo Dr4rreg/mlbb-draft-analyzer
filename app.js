@@ -1,7 +1,11 @@
 let step = 0;
 let timer = 50;
 let interval = null;
+
 let selectedRole = "All";
+
+const picks = [];
+const bans = [];
 
 /* MPL ORDER */
 const draftOrder = [
@@ -30,50 +34,25 @@ const draftOrder = [
   { type: "pick", side: "Red" }
 ];
 
-const picks = [];
-const bans = [];
-
 window.onload = () => {
-  renderRoleFilters();
   renderHeroPool();
   updateTurn();
   startTimer();
 };
 
-function renderRoleFilters() {
-  const container = document.getElementById("roleFilters");
-  container.innerHTML = "";
-
-  const roles = ["All", "Tank", "Fighter", "Assassin", "Mage", "Marksman", "Support"];
-  roles.forEach(role => {
-    const btn = document.createElement("button");
-    btn.className = "role-btn";
-    if (role === selectedRole) btn.classList.add("active");
-    btn.innerText = role;
-    btn.onclick = () => {
-      selectedRole = role;
-      document.querySelectorAll(".role-btn").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      renderHeroPool();
-    };
-    container.appendChild(btn);
-  });
-}
+/* ================= HERO POOL ================= */
 
 function renderHeroPool() {
   const grid = document.getElementById("heroGrid");
   grid.innerHTML = "";
 
   heroes.forEach(hero => {
-    // FILTER BY ROLE (dual-role safe)
-    if (
-      selectedRole !== "All" &&
-      !hero.roles.map(r => r.toLowerCase()).includes(selectedRole.toLowerCase())
-    ) return;
+    if (!matchesRoleFilter(hero)) return;
 
     const btn = document.createElement("button");
     btn.className = "heroBtn";
-    if (picks.some(p => p.hero === hero.name) || bans.some(b => b.hero === hero.name)) {
+
+    if (isHeroLocked(hero.name)) {
       btn.classList.add("locked");
     }
 
@@ -92,6 +71,24 @@ function renderHeroPool() {
   });
 }
 
+/* ================= ROLE FILTER ================= */
+
+function setRoleFilter(role) {
+  selectedRole = role;
+  renderHeroPool();
+}
+
+function matchesRoleFilter(hero) {
+  if (selectedRole === "All") return true;
+
+  if (hero.role && hero.role === selectedRole) return true;
+  if (hero.roles && hero.roles.includes(selectedRole)) return true;
+
+  return false;
+}
+
+/* ================= TIMER ================= */
+
 function startTimer() {
   clearInterval(interval);
   timer = 50;
@@ -108,40 +105,49 @@ function startTimer() {
   }, 1000);
 }
 
+/* ================= AUTO RESOLVE ================= */
+
 function autoResolve() {
   const current = draftOrder[step];
   if (!current) return;
 
   if (current.type === "pick") {
-    const available = heroes.filter(
-      h => !picks.some(p => p.hero === h.name) && !bans.some(b => b.hero === h.name)
-    );
-    if (available.length) {
-      // Check if multiple picks in this step
-      const simultaneousPick = draftOrder.filter((d, idx) => idx >= step && d.type === "pick" && d.side === current.side);
-      if (simultaneousPick.length > 1) {
-        simultaneousPick.forEach(() => {
-          forceSelect(available.splice(Math.floor(Math.random() * available.length),1)[0]);
-        });
-        return;
-      } else {
-        forceSelect(available[Math.floor(Math.random() * available.length)]);
-        return;
-      }
+    const needed = isSimultaneousPick(step) ? 2 : 1;
+
+    for (let i = 0; i < needed; i++) {
+      const available = getAvailableHeroes();
+      if (!available.length) break;
+      forceSelect(randomHero(available));
     }
+  } else {
+    // ban skipped intentionally
   }
 
-  // For bans, just skip if not selected
   step++;
   updateTurn();
   startTimer();
 }
 
+function isSimultaneousPick(stepIndex) {
+  const cur = draftOrder[stepIndex];
+  const next = draftOrder[stepIndex + 1];
+
+  return (
+    cur &&
+    next &&
+    cur.type === "pick" &&
+    next.type === "pick" &&
+    cur.side === next.side
+  );
+}
+
+/* ================= SELECTION ================= */
+
 function selectHero(hero, btn) {
   if (btn.classList.contains("locked")) return;
+
   clearInterval(interval);
   forceSelect(hero);
-  btn.classList.add("locked");
 }
 
 function forceSelect(hero) {
@@ -156,13 +162,27 @@ function forceSelect(hero) {
     addIcon(current.side, hero.icon, false);
   }
 
-  document.querySelectorAll(".heroBtn").forEach(b => {
-    if (b.innerText === hero.name) b.classList.add("locked");
-  });
-
   step++;
   updateTurn();
   startTimer();
+  renderHeroPool();
+}
+
+/* ================= HELPERS ================= */
+
+function getAvailableHeroes() {
+  return heroes.filter(h => !isHeroLocked(h.name));
+}
+
+function isHeroLocked(name) {
+  return (
+    picks.some(p => p.hero === name) ||
+    bans.some(b => b.hero === name)
+  );
+}
+
+function randomHero(list) {
+  return list[Math.floor(Math.random() * list.length)];
 }
 
 function addIcon(side, icon, isBan) {
@@ -181,8 +201,15 @@ function addIcon(side, icon, isBan) {
   document.getElementById(id).appendChild(div);
 }
 
+/* ================= TURN ================= */
+
 function updateTurn() {
-  if (step >= draftOrder.length) {
+  if (
+    picks.filter(p => p.side === "Blue").length === 5 &&
+    picks.filter(p => p.side === "Red").length === 5 &&
+    bans.filter(b => b.side === "Blue").length === 5 &&
+    bans.filter(b => b.side === "Red").length === 5
+  ) {
     document.getElementById("turnIndicator").innerText = "Draft Complete!";
     document.getElementById("analyzeBtn").disabled = false;
     clearInterval(interval);
@@ -194,6 +221,9 @@ function updateTurn() {
     `${c.side} Team — ${c.type.toUpperCase()}`;
 }
 
+/* ================= ANALYSIS ================= */
+
 function analyzeDraft() {
-  document.getElementById("result").innerText = "Draft analysis coming in Phase 4 😉";
+  document.getElementById("result").innerText =
+    "Draft analysis coming in Phase 4 😉";
 }
