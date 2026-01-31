@@ -130,5 +130,4 @@ const heroes = [
   { name: "Zetian", roles: ["Mage"], lanes: ["Mid"], icon: "icons/Zetian.png" },
   { name: "Obsidia", roles: ["Marksman"], lanes: ["Gold"], icon: "icons/Obsidia.png" },
   { name: "Sora", roles: ["Fighter", "Assassin"], lanes: ["Exp", "Gold"], icon: "icons/Sora.png" }
-
 ];
