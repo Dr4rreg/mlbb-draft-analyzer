@@ -1,3 +1,6 @@
+/* =========================
+   PAGE BASE
+   ========================= */
 body {
   background-color: #0f172a;
   color: #e5e7eb;
@@ -23,8 +26,9 @@ h1 {
   margin-bottom: 10px;
 }
 
-/* ================= DRAFT UI ================= */
-
+/* =========================
+   DRAFT UI
+   ========================= */
 #draftUI {
   max-width: 1200px;
   margin: 0 auto 10px;
@@ -50,14 +54,27 @@ h1 {
   flex-direction: row-reverse;
 }
 
-.banIcon,
-.pickIcon {
-  width: 64px;
-  height: 64px;
+/* =========================
+   HERO ICONS (BANS & PICKS)
+   ========================= */
+
+/* Bans larger square */
+.banIcon {
+  width: 80px;      
+  height: 80px;
   border-radius: 6px;
   overflow: hidden;
 }
 
+/* Picks same size as bans */
+.pickIcon {
+  width: 80px;      
+  height: 80px;    
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* Images fill the icon area */
 .banIcon img,
 .pickIcon img {
   width: 100%;
@@ -65,17 +82,18 @@ h1 {
   object-fit: cover;
 }
 
-/* BANS GREYED */
+/* Greyed-out bans */
 .banIcon img {
   filter: grayscale(100%) brightness(70%);
 }
 
-/* ================= HERO POOL ================= */
-
+/* =========================
+   HERO POOL
+   ========================= */
 #heroGrid {
   display: grid;
   grid-template-columns: repeat(10, 1fr);
-  gap: 4px;
+  gap: 4px; /* minimal gap */
   max-width: 1200px;
   margin: 0 auto;
   padding: 6px;
@@ -108,13 +126,18 @@ h1 {
   text-align: center;
   padding: 2px;
   line-height: 1.1;
+  pointer-events: none; /* allow clicks to pass through */
 }
 
+/* Locked heroes */
 .heroBtn.locked {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
+/* =========================
+   ANALYZE BUTTON
+   ========================= */
 .center {
   text-align: center;
   margin: 10px;
