@@ -13,7 +13,7 @@ const draftOrder = [
 
   { type: "pick", side: "Blue" },
   { type: "pick", side: "Red" },
-  { type: "pick", side: "Red" },
+  { type: "pick", side: "Red" }, // Simultaneous picks R1 + R2
   { type: "pick", side: "Blue" },
   { type: "pick", side: "Blue" },
   { type: "pick", side: "Red" },
@@ -48,7 +48,7 @@ function renderHeroPool() {
   heroes.forEach(hero => {
     const btn = document.createElement("button");
     btn.className = "heroBtn";
-    btn.dataset.hero = hero.name; // for reliable matching
+    btn.dataset.hero = hero.name;
 
     const img = document.createElement("img");
     img.src = hero.icon;
@@ -57,7 +57,7 @@ function renderHeroPool() {
     const name = document.createElement("div");
     name.className = "heroName";
     name.innerText = hero.name;
-    name.style.pointerEvents = "none"; // allow clicks to pass through
+    name.style.pointerEvents = "none";
     btn.appendChild(name);
 
     btn.onclick = () => selectHero(hero, btn);
@@ -93,24 +93,37 @@ function autoResolve() {
   if (!current) return;
 
   if (current.type === "pick") {
-    // Pick a random hero that isn't already picked or banned
-    const available = heroes.filter(h =>
-      !picks.some(p => p.hero === h.name) &&
-      !bans.some(b => b.hero === h.name)
-    );
-    if (available.length) {
-      forceSelect(available[Math.floor(Math.random() * available.length)]);
-    } else {
-      step++;
-      updateTurn();
-      startTimer();
+    // Determine how many picks are in this simultaneous step
+    let count = 1;
+    if (
+      draftOrder[step + 1] &&
+      draftOrder[step + 1].type === "pick" &&
+      draftOrder[step + 1].side === current.side
+    ) {
+      // next step is simultaneous pick, auto-resolve both
+      count = 2;
+    }
+
+    for (let i = 0; i < count; i++) {
+      const pickStep = draftOrder[step];
+      const available = heroes.filter(h =>
+        !picks.some(p => p.hero === h.name) &&
+        !bans.some(b => b.hero === h.name)
+      );
+      if (available.length) {
+        forceSelect(available[Math.floor(Math.random() * available.length)], false);
+      } else {
+        step++;
+      }
     }
   } else if (current.type === "ban") {
     // Skip ban if no hero selected
     step++;
-    updateTurn();
-    startTimer();
   }
+
+  updateTurn();
+  // Restart timer if draft not complete
+  if (!isDraftComplete()) startTimer();
 }
 
 // =========================
@@ -129,7 +142,7 @@ function selectHero(hero, btn) {
 // =========================
 // FORCE SELECT (ADD HERO TO DRAFT)
 // =========================
-function forceSelect(hero) {
+function forceSelect(hero, incrementStep = true) {
   const current = draftOrder[step];
   if (!current) return;
 
@@ -148,9 +161,8 @@ function forceSelect(hero) {
     btn.disabled = true;
   }
 
-  step++;
+  if (incrementStep) step++;
   updateTurn();
-  startTimer();
 }
 
 // =========================
@@ -176,7 +188,7 @@ function addIcon(side, icon, isBan) {
 // UPDATE TURN INDICATOR
 // =========================
 function updateTurn() {
-  if (step >= draftOrder.length) {
+  if (isDraftComplete()) {
     document.getElementById("turnIndicator").innerText = "Draft Complete!";
     document.getElementById("analyzeBtn").disabled = false;
     clearInterval(interval);
@@ -186,6 +198,18 @@ function updateTurn() {
   const c = draftOrder[step];
   document.getElementById("turnIndicator").innerText =
     `${c.side} Team — ${c.type.toUpperCase()}`;
+}
+
+// =========================
+// CHECK DRAFT COMPLETION
+// =========================
+function isDraftComplete() {
+  const blueBans = bans.filter(b => b.side === "Blue").length;
+  const redBans = bans.filter(b => b.side === "Red").length;
+  const bluePicks = picks.filter(p => p.side === "Blue").length;
+  const redPicks = picks.filter(p => p.side === "Red").length;
+
+  return blueBans >= 5 && redBans >= 5 && bluePicks >= 5 && redPicks >= 5;
 }
 
 // =========================
