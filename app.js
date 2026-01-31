@@ -34,13 +34,14 @@ const draftOrder = [
   { type: "pick", side: "Red" }
 ];
 
-/* ================= INIT ================= */
 window.onload = () => {
   renderHeroPool();
-  nextStep(); // Start draft immediately with first timer
+  updateTurn();
+  startTimer();
 };
 
 /* ================= HERO POOL ================= */
+
 function renderHeroPool() {
   const grid = document.getElementById("heroGrid");
   grid.innerHTML = "";
@@ -60,7 +61,6 @@ function renderHeroPool() {
 
     const name = document.createElement("div");
     name.className = "heroName";
-    name.style.color = "white"; // Hero name text white
     name.innerText = hero.name;
 
     btn.appendChild(img);
@@ -72,6 +72,7 @@ function renderHeroPool() {
 }
 
 /* ================= ROLE FILTER ================= */
+
 function setRoleFilter(role) {
   selectedRole = role;
   renderHeroPool();
@@ -79,11 +80,16 @@ function setRoleFilter(role) {
 
 function matchesRoleFilter(hero) {
   if (selectedRole === "All") return true;
-  return hero.roles && hero.roles.includes(selectedRole);
+
+  if (hero.role && hero.role === selectedRole) return true;
+  if (hero.roles && hero.roles.includes(selectedRole)) return true;
+
+  return false;
 }
 
 /* ================= TIMER ================= */
-function startStepTimer() {
+
+function startTimer() {
   clearInterval(interval);
   timer = 50;
   document.getElementById("timer").innerText = timer;
@@ -99,22 +105,8 @@ function startStepTimer() {
   }, 1000);
 }
 
-/* ================= NEXT STEP ================= */
-function nextStep() {
-  const current = draftOrder[step];
-
-  if (!current) {
-    document.getElementById("turnIndicator").innerText = "Draft Complete!";
-    document.getElementById("analyzeBtn").disabled = false;
-    clearInterval(interval);
-    return;
-  }
-
-  document.getElementById("turnIndicator").innerText = `${current.side} Team — ${current.type.toUpperCase()}`;
-  startStepTimer();
-}
-
 /* ================= AUTO RESOLVE ================= */
+
 function autoResolve() {
   const current = draftOrder[step];
   if (!current) return;
@@ -128,14 +120,30 @@ function autoResolve() {
       forceSelect(randomHero(available));
     }
   } else {
-    // Ban skipped
+    // Ban skipped intentionally; placeholder remains
     addSkippedBan(current.side);
     step++;
-    nextStep(); // Start timer for next step
   }
+
+  updateTurn();
+  startTimer();
+}
+
+function isSimultaneousPick(stepIndex) {
+  const cur = draftOrder[stepIndex];
+  const next = draftOrder[stepIndex + 1];
+
+  return (
+    cur &&
+    next &&
+    cur.type === "pick" &&
+    next.type === "pick" &&
+    cur.side === next.side
+  );
 }
 
 /* ================= SELECTION ================= */
+
 function selectHero(hero, btn) {
   if (btn.classList.contains("locked")) return;
 
@@ -147,26 +155,33 @@ function forceSelect(hero) {
   const current = draftOrder[step];
   if (!current) return;
 
+  const playedLane = hero.lanes[0]; // default lane if not specified
+
   if (current.type === "ban") {
     bans.push({ hero: hero.name, side: current.side });
     addIcon(current.side, hero.icon, true);
   } else {
-    picks.push({ hero: hero.name, side: current.side });
+    picks.push({ hero: hero.name, side: current.side, lane: playedLane });
     addIcon(current.side, hero.icon, false);
   }
 
   step++;
+  updateTurn();
+  startTimer();
   renderHeroPool();
-  nextStep(); // Start timer for next step
 }
 
 /* ================= HELPERS ================= */
+
 function getAvailableHeroes() {
   return heroes.filter(h => !isHeroLocked(h.name));
 }
 
 function isHeroLocked(name) {
-  return picks.some(p => p.hero === name) || bans.some(b => b.hero === name);
+  return (
+    picks.some(p => p.hero === name) ||
+    bans.some(b => b.hero === name)
+  );
 }
 
 function randomHero(list) {
@@ -181,9 +196,10 @@ function addIcon(side, icon, isBan) {
   img.src = icon;
   div.appendChild(img);
 
-  const id = side === "Blue"
-    ? isBan ? "blueBans" : "bluePicks"
-    : isBan ? "redBans" : "redPicks";
+  const id =
+    side === "Blue"
+      ? isBan ? "blueBans" : "bluePicks"
+      : isBan ? "redBans" : "redPicks";
 
   document.getElementById(id).appendChild(div);
 }
@@ -196,11 +212,33 @@ function addSkippedBan(side) {
   document.getElementById(id).appendChild(div);
 }
 
+/* ================= TURN ================= */
+
+function updateTurn() {
+  if (
+    picks.filter(p => p.side === "Blue").length === 5 &&
+    picks.filter(p => p.side === "Red").length === 5 &&
+    bans.filter(b => b.side === "Blue").length === 5 &&
+    bans.filter(b => b.side === "Red").length === 5
+  ) {
+    document.getElementById("turnIndicator").innerText = "Draft Complete!";
+    document.getElementById("analyzeBtn").disabled = false;
+    clearInterval(interval);
+    return;
+  }
+
+  const c = draftOrder[step];
+  if (c) {
+    document.getElementById("turnIndicator").innerText =
+      `${c.side} Team — ${c.type.toUpperCase()}`;
+  }
+}
+
 /* ================= LANE COVERAGE ANALYTICS ================= */
+
 function checkLaneCoverage(teamPicks) {
   const lanes = ["Exp", "Jungle", "Mid", "Roam", "Gold"];
   const assigned = new Set();
-  const missing = [];
 
   for (let heroName of teamPicks) {
     const hero = heroes.find(h => h.name === heroName);
@@ -214,38 +252,48 @@ function checkLaneCoverage(teamPicks) {
     }
   }
 
-  // Identify missing lanes
-  for (let lane of lanes) {
-    if (!assigned.has(lane)) missing.push(lane);
-  }
+  return assigned.size === lanes.length;
+}
 
-  return { full: assigned.size === lanes.length, missing };
+/* ================= METATIER SCORING ================= */
+
+function calculateMetaScore(side) {
+  const teamPicks = picks.filter(p => p.side === side);
+  let score = 0;
+
+  teamPicks.forEach(pick => {
+    const hero = heroes.find(h => h.name === pick.hero);
+    if (!hero || !hero.metaTier) return;
+
+    if (!hero.lanes.includes(pick.lane)) return; // 0 points if wrong lane
+
+    switch (hero.metaTier) {
+      case "S": score += 10; break;
+      case "A": score += 8; break;
+      case "B": score += 6; break;
+      case "Situational": score += 4; break;
+      case "F": score += 2; break;
+    }
+  });
+
+  return score;
 }
 
 /* ================= ANALYSIS ================= */
+
 function analyzeDraft() {
   const blueHeroes = picks.filter(p => p.side === "Blue").map(p => p.hero);
   const redHeroes = picks.filter(p => p.side === "Red").map(p => p.hero);
 
-  const blueCoverage = checkLaneCoverage(blueHeroes);
-  const redCoverage = checkLaneCoverage(redHeroes);
+  let blueScore = 0;
+  let redScore = 0;
 
-  let blueScore = blueCoverage.full ? 10 : 0;
-  let redScore = redCoverage.full ? 10 : 0;
+  if (checkLaneCoverage(blueHeroes)) blueScore += 10;
+  if (checkLaneCoverage(redHeroes)) redScore += 10;
 
-  let resultText = `Blue Team Score: ${blueScore}`;
-  if (!blueCoverage.full) resultText += ` — Missing: ${blueCoverage.missing.join(", ")}`;
+  blueScore += calculateMetaScore("Blue");
+  redScore += calculateMetaScore("Red");
 
-  resultText += `\nRed Team Score: ${redScore}`;
-  if (!redCoverage.full) resultText += ` — Missing: ${redCoverage.missing.join(", ")}`;
-
-  document.getElementById("result").innerText = resultText;
-}
-
-/* ================= SIMULTANEOUS PICK ================= */
-function isSimultaneousPick(stepIndex) {
-  const cur = draftOrder[stepIndex];
-  const next = draftOrder[stepIndex + 1];
-
-  return cur && next && cur.type === "pick" && next.type === "pick" && cur.side === next.side;
+  document.getElementById("result").innerText =
+    `Blue Team Score: ${blueScore}\nRed Team Score: ${redScore}`;
 }
