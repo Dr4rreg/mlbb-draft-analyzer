@@ -70,7 +70,7 @@ function renderHeroPool() {
 // START TIMER
 // =========================
 function startTimer() {
-  clearInterval(interval);
+  clearInterval(interval); // ensure no overlapping timers
   timer = 50;
   document.getElementById("timer").innerText = timer;
 
@@ -93,15 +93,14 @@ function autoResolve() {
   if (!current) return;
 
   if (current.type === "pick") {
-    // Determine how many picks are in this simultaneous step
+    // Determine how many simultaneous picks for this side
     let count = 1;
     if (
       draftOrder[step + 1] &&
       draftOrder[step + 1].type === "pick" &&
       draftOrder[step + 1].side === current.side
     ) {
-      // next step is simultaneous pick, auto-resolve both
-      count = 2;
+      count = 2; // auto-pick 2 heroes simultaneously
     }
 
     for (let i = 0; i < count; i++) {
@@ -112,9 +111,8 @@ function autoResolve() {
       );
       if (available.length) {
         forceSelect(available[Math.floor(Math.random() * available.length)], false);
-      } else {
-        step++;
       }
+      step++;
     }
   } else if (current.type === "ban") {
     // Skip ban if no hero selected
@@ -122,6 +120,7 @@ function autoResolve() {
   }
 
   updateTurn();
+
   // Restart timer if draft not complete
   if (!isDraftComplete()) startTimer();
 }
