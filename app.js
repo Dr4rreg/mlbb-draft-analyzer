@@ -120,10 +120,11 @@ function autoResolve() {
       forceSelect(randomHero(available));
     }
   } else {
-    // ban skipped intentionally
+    // Ban skipped intentionally; placeholder remains
+    addSkippedBan(current.side);
+    step++;
   }
 
-  step++;
   updateTurn();
   startTimer();
 }
@@ -201,6 +202,14 @@ function addIcon(side, icon, isBan) {
   document.getElementById(id).appendChild(div);
 }
 
+function addSkippedBan(side) {
+  const div = document.createElement("div");
+  div.className = "banIcon skipped";
+
+  const id = side === "Blue" ? "blueBans" : "redBans";
+  document.getElementById(id).appendChild(div);
+}
+
 /* ================= TURN ================= */
 
 function updateTurn() {
@@ -217,13 +226,47 @@ function updateTurn() {
   }
 
   const c = draftOrder[step];
-  document.getElementById("turnIndicator").innerText =
-    `${c.side} Team — ${c.type.toUpperCase()}`;
+  if (c) {
+    document.getElementById("turnIndicator").innerText =
+      `${c.side} Team — ${c.type.toUpperCase()}`;
+  }
+}
+
+/* ================= LANE COVERAGE ANALYTICS ================= */
+
+// Check if a team can cover all 5 lanes: Exp, Jungle, Mid, Roam, Gold
+function checkLaneCoverage(teamPicks) {
+  const lanes = ["Exp", "Jungle", "Mid", "Roam", "Gold"];
+  const assigned = new Set();
+
+  for (let heroName of teamPicks) {
+    const hero = heroes.find(h => h.name === heroName);
+    if (!hero || !hero.lanes) continue;
+
+    // Assign the first lane that hasn't been covered yet
+    for (let lane of hero.lanes) {
+      if (!assigned.has(lane)) {
+        assigned.add(lane);
+        break;
+      }
+    }
+  }
+
+  return assigned.size === lanes.length; // true if all 5 lanes covered
 }
 
 /* ================= ANALYSIS ================= */
 
 function analyzeDraft() {
+  const blueHeroes = picks.filter(p => p.side === "Blue").map(p => p.hero);
+  const redHeroes = picks.filter(p => p.side === "Red").map(p => p.hero);
+
+  let blueScore = 0;
+  let redScore = 0;
+
+  if (checkLaneCoverage(blueHeroes)) blueScore += 10;
+  if (checkLaneCoverage(redHeroes)) redScore += 10;
+
   document.getElementById("result").innerText =
-    "Draft analysis coming in Phase 4 😉";
+    `Blue Team Score: ${blueScore}\nRed Team Score: ${redScore}`;
 }
