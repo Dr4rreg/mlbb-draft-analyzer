@@ -1,9 +1,3 @@
-const heroes = [
-  { name: "Miya", roles: ["Marksman", "Tank"], lanes: ["Gold"], icon: "icons/Miya.png" },
-  { name: "Balmond", roles: ["Fighter", "Mage"], lanes: ["Jungle"], icon: "icons/Balmond.png" },
-  /* Add all other heroes here as previously provided */
-];
-
 let step = 0;
 let timer = 50;
 let interval = null;
