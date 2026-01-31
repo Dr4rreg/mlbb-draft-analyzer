@@ -95,7 +95,7 @@ function autoResolve() {
   if (!current) return;
 
   if (current.type === "pick") {
-    // Determine number of simultaneous picks for this side
+    // Handle simultaneous picks
     let simultaneousCount = 1;
     while (
       draftOrder[step + simultaneousCount] &&
@@ -117,13 +117,12 @@ function autoResolve() {
     }
 
   } else if (current.type === "ban") {
-    // Skip ban if no hero selected
+    // Skip ban but keep empty slot
+    addIcon(current.side, null, true);
     step++;
   }
 
   updateTurn();
-
-  // Restart timer if draft not complete
   if (!isDraftComplete()) startTimer();
 }
 
@@ -133,29 +132,23 @@ function autoResolve() {
 function selectHero(hero, btn) {
   if (btn.disabled) return;
 
-  // Stop current timer
   clearInterval(interval);
-
-  // Add hero to draft
   forceSelect(hero);
 
-  // Lock hero in pool
   btn.classList.add("locked");
   btn.disabled = true;
 
-  // Update turn and restart timer for next phase
   if (!isDraftComplete()) {
     updateTurn();
-    startTimer(); // <-- key fix: restart timer on manual pick/ban
+    startTimer();
   } else {
-    // Draft complete
     document.getElementById("turnIndicator").innerText = "Draft Complete!";
     document.getElementById("analyzeBtn").disabled = false;
   }
 }
 
 // =========================
-// FORCE SELECT (ADD HERO TO DRAFT)
+// FORCE SELECT
 // =========================
 function forceSelect(hero, incrementStep = true) {
   const current = draftOrder[step];
@@ -183,6 +176,19 @@ function forceSelect(hero, incrementStep = true) {
 // ADD ICON TO DRAFT UI
 // =========================
 function addIcon(side, icon, isBan) {
+  let containerId = side === "Blue"
+    ? isBan ? "blueBans" : "bluePicks"
+    : isBan ? "redBans" : "redPicks";
+  const container = document.getElementById(containerId);
+
+  if (!icon && isBan) {
+    // Add empty placeholder for skipped ban
+    const emptyDiv = document.createElement("div");
+    emptyDiv.className = "banIcon skipped";
+    container.appendChild(emptyDiv);
+    return;
+  }
+
   const div = document.createElement("div");
   div.className = isBan ? "banIcon" : "pickIcon";
 
@@ -190,12 +196,7 @@ function addIcon(side, icon, isBan) {
   img.src = icon;
   div.appendChild(img);
 
-  const id =
-    side === "Blue"
-      ? isBan ? "blueBans" : "bluePicks"
-      : isBan ? "redBans" : "redPicks";
-
-  document.getElementById(id).appendChild(div);
+  container.appendChild(div);
 }
 
 // =========================
@@ -227,7 +228,7 @@ function isDraftComplete() {
 }
 
 // =========================
-// ANALYZE DRAFT BUTTON
+// ANALYZE DRAFT
 // =========================
 function analyzeDraft() {
   document.getElementById("result").innerText = "Draft analysis coming in Phase 4 😉";
