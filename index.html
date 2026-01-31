@@ -3,51 +3,54 @@
 <head>
   <meta charset="UTF-8" />
   <title>MLBB Draft Simulator</title>
-  <link rel="stylesheet" href="style.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
 
+  <link rel="stylesheet" href="style.css">
+</head>
 <body>
 
   <h1>MLBB Draft Simulator</h1>
 
-  <!-- Turn / Phase Indicator -->
-  <div id="turnIndicator">Loading...</div>
+  <!-- TURN + TIMER -->
+  <div id="turnIndicator">Loading…</div>
+  <div id="timer">50</div>
 
-  <!-- Timer Display -->
-  <div id="timerContainer">
-    <span id="timerText">Time Left:</span> <span id="timer">50</span>s
-  </div>
-
-  <!-- PICKS / BANS AREA -->
-  <div id="draftArea">
-    <div id="blueContainer" class="teamColumn">
-      <h2>Blue Team</h2>
-      <!-- Bans and Picks will be dynamically added here -->
+  <!-- DRAFT UI -->
+  <div id="draftUI">
+    <!-- BANS -->
+    <div class="draftRow">
+      <div class="side blue">
+        <div class="banRow" id="blueBans"></div>
+      </div>
+      <div class="side red">
+        <div class="banRow reverse" id="redBans"></div>
+      </div>
     </div>
 
-    <div id="redContainer" class="teamColumn">
-      <h2>Red Team</h2>
-      <!-- Bans and Picks will be dynamically added here -->
+    <!-- PICKS -->
+    <div class="draftRow">
+      <div class="side blue">
+        <div class="pickRow" id="bluePicks"></div>
+      </div>
+      <div class="side red">
+        <div class="pickRow reverse" id="redPicks"></div>
+      </div>
     </div>
   </div>
 
   <!-- HERO POOL -->
   <div id="heroGrid"></div>
 
-  <!-- Analyze Button -->
-  <div style="text-align:center; margin: 10px;">
+  <!-- ANALYZE -->
+  <div class="center">
     <button id="analyzeBtn" onclick="analyzeDraft()" disabled>
       Analyze Draft
     </button>
   </div>
 
-  <!-- Result Output -->
   <div id="result"></div>
 
-  <!-- JavaScript -->
   <script src="heroes.js"></script>
   <script src="app.js"></script>
-
 </body>
 </html>
