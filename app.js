@@ -1,13 +1,17 @@
+/* ======================
+   GLOBAL STATE
+====================== */
 let step = 0;
 let timer = 50;
 let interval = null;
-
 let selectedRole = "All";
 
 const picks = [];
 const bans = [];
 
-/* MPL ORDER */
+/* ======================
+   DRAFT ORDER (MPL)
+====================== */
 const draftOrder = [
   { type: "ban", side: "Blue" },
   { type: "ban", side: "Red" },
@@ -34,25 +38,49 @@ const draftOrder = [
   { type: "pick", side: "Red" }
 ];
 
+/* ======================
+   INIT
+====================== */
 window.onload = () => {
   renderHeroPool();
   updateTurn();
   startTimer();
 };
 
-/* ================= HERO POOL ================= */
+/* ======================
+   ROLE FILTER (UX POLISH)
+====================== */
+function setRoleFilter(role) {
+  selectedRole = role;
 
+  document.querySelectorAll(".role-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.role === role);
+  });
+
+  renderHeroPool();
+}
+
+/* ======================
+   HERO POOL
+====================== */
 function renderHeroPool() {
   const grid = document.getElementById("heroGrid");
   grid.innerHTML = "";
 
   heroes.forEach(hero => {
-    if (!matchesRoleFilter(hero)) return;
+    // ✅ ROLE FILTER (DUAL ROLE SUPPORT)
+    if (
+      selectedRole !== "All" &&
+      !hero.roles.includes(selectedRole)
+    ) return;
 
     const btn = document.createElement("button");
     btn.className = "heroBtn";
 
-    if (isHeroLocked(hero.name)) {
+    if (
+      picks.some(p => p.hero === hero.name) ||
+      bans.some(b => b.hero === hero.name)
+    ) {
       btn.classList.add("locked");
     }
 
@@ -71,24 +99,9 @@ function renderHeroPool() {
   });
 }
 
-/* ================= ROLE FILTER ================= */
-
-function setRoleFilter(role) {
-  selectedRole = role;
-  renderHeroPool();
-}
-
-function matchesRoleFilter(hero) {
-  if (selectedRole === "All") return true;
-
-  if (hero.role && hero.role === selectedRole) return true;
-  if (hero.roles && hero.roles.includes(selectedRole)) return true;
-
-  return false;
-}
-
-/* ================= TIMER ================= */
-
+/* ======================
+   TIMER
+====================== */
 function startTimer() {
   clearInterval(interval);
   timer = 50;
@@ -105,51 +118,44 @@ function startTimer() {
   }, 1000);
 }
 
-/* ================= AUTO RESOLVE ================= */
-
+/* ======================
+   AUTO RESOLVE
+====================== */
 function autoResolve() {
   const current = draftOrder[step];
   if (!current) return;
 
   if (current.type === "pick") {
-    const needed = isSimultaneousPick(step) ? 2 : 1;
+    const available = heroes.filter(h =>
+      !picks.some(p => p.hero === h.name) &&
+      !bans.some(b => b.hero === h.name)
+    );
 
-    for (let i = 0; i < needed; i++) {
-      const available = getAvailableHeroes();
-      if (!available.length) break;
-      forceSelect(randomHero(available));
+    if (available.length) {
+      forceSelect(available[Math.floor(Math.random() * available.length)]);
     }
-  } else {
-    // ban skipped intentionally
   }
 
+  // ❗ Ban timeout = skipped
   step++;
   updateTurn();
   startTimer();
 }
 
-function isSimultaneousPick(stepIndex) {
-  const cur = draftOrder[stepIndex];
-  const next = draftOrder[stepIndex + 1];
-
-  return (
-    cur &&
-    next &&
-    cur.type === "pick" &&
-    next.type === "pick" &&
-    cur.side === next.side
-  );
-}
-
-/* ================= SELECTION ================= */
-
+/* ======================
+   HERO SELECTION
+====================== */
 function selectHero(hero, btn) {
   if (btn.classList.contains("locked")) return;
 
   clearInterval(interval);
   forceSelect(hero);
+  btn.classList.add("locked");
 }
 
+/* ======================
+   APPLY PICK / BAN
+====================== */
 function forceSelect(hero) {
   const current = draftOrder[step];
   if (!current) return;
@@ -168,23 +174,9 @@ function forceSelect(hero) {
   renderHeroPool();
 }
 
-/* ================= HELPERS ================= */
-
-function getAvailableHeroes() {
-  return heroes.filter(h => !isHeroLocked(h.name));
-}
-
-function isHeroLocked(name) {
-  return (
-    picks.some(p => p.hero === name) ||
-    bans.some(b => b.hero === name)
-  );
-}
-
-function randomHero(list) {
-  return list[Math.floor(Math.random() * list.length)];
-}
-
+/* ======================
+   ICON PLACEMENT
+====================== */
 function addIcon(side, icon, isBan) {
   const div = document.createElement("div");
   div.className = isBan ? "banIcon" : "pickIcon";
@@ -201,15 +193,11 @@ function addIcon(side, icon, isBan) {
   document.getElementById(id).appendChild(div);
 }
 
-/* ================= TURN ================= */
-
+/* ======================
+   TURN INDICATOR
+====================== */
 function updateTurn() {
-  if (
-    picks.filter(p => p.side === "Blue").length === 5 &&
-    picks.filter(p => p.side === "Red").length === 5 &&
-    bans.filter(b => b.side === "Blue").length === 5 &&
-    bans.filter(b => b.side === "Red").length === 5
-  ) {
+  if (step >= draftOrder.length) {
     document.getElementById("turnIndicator").innerText = "Draft Complete!";
     document.getElementById("analyzeBtn").disabled = false;
     clearInterval(interval);
@@ -221,8 +209,9 @@ function updateTurn() {
     `${c.side} Team — ${c.type.toUpperCase()}`;
 }
 
-/* ================= ANALYSIS ================= */
-
+/* ======================
+   ANALYSIS PLACEHOLDER
+====================== */
 function analyzeDraft() {
   document.getElementById("result").innerText =
     "Draft analysis coming in Phase 4 😉";
