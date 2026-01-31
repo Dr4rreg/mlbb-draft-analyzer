@@ -1,6 +1,4 @@
-/* =========================
-   PAGE BASE
-   ========================= */
+/* ================== GENERAL STYLES ================== */
 body {
   background-color: #0f172a;
   color: #e5e7eb;
@@ -18,6 +16,7 @@ h1 {
   text-align: center;
   font-weight: bold;
   font-size: 18px;
+  margin-top: 10px;
 }
 
 #timer {
@@ -26,9 +25,17 @@ h1 {
   margin-bottom: 10px;
 }
 
-/* =========================
-   DRAFT UI
-   ========================= */
+.center {
+  text-align: center;
+  margin: 10px;
+}
+
+#result {
+  text-align: center;
+  margin-top: 10px;
+}
+
+/* ================== DRAFT UI ================== */
 #draftUI {
   max-width: 1200px;
   margin: 0 auto 10px;
@@ -42,6 +49,9 @@ h1 {
 
 .side {
   width: 48%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .banRow,
@@ -54,27 +64,18 @@ h1 {
   flex-direction: row-reverse;
 }
 
-/* =========================
-   HERO ICONS (BANS & PICKS)
-   ========================= */
-
-/* Bans larger square */
-.banIcon {
-  width: 100px;      /* increased from 80px */
-  height: 100px;     /* increased from 80px */
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-/* Picks same size as bans */
+/* ================== BANS & PICKS ================== */
+.banIcon,
 .pickIcon {
-  width: 100px;      /* increased from 80px */
-  height: 100px;     /* increased from 80px */
+  width: 100px;
+  height: 100px;
   border-radius: 6px;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Images fill the icon area */
 .banIcon img,
 .pickIcon img {
   width: 100%;
@@ -87,13 +88,20 @@ h1 {
   filter: grayscale(100%) brightness(70%);
 }
 
-/* =========================
-   HERO POOL
-   ========================= */
+/* Skipped ban placeholder */
+.banIcon.skipped {
+  width: 100px;
+  height: 100px;
+  background-color: rgba(100, 100, 100, 0.3);
+  border: 2px dashed rgba(200, 200, 200, 0.4);
+  border-radius: 6px;
+}
+
+/* ================== HERO POOL ================== */
 #heroGrid {
   display: grid;
   grid-template-columns: repeat(10, 1fr);
-  gap: 4px; /* minimal gap */
+  gap: 4px;
   max-width: 1200px;
   margin: 0 auto;
   padding: 6px;
@@ -122,28 +130,13 @@ h1 {
   bottom: 0;
   width: 100%;
   background: rgba(0,0,0,0.65);
-  font-size: 11px;
+  font-size: 12px;
   text-align: center;
   padding: 2px;
   line-height: 1.1;
-  pointer-events: none; /* allow clicks to pass through */
 }
 
-/* Locked heroes */
 .heroBtn.locked {
   opacity: 0.4;
   cursor: not-allowed;
-}
-
-/* =========================
-   ANALYZE BUTTON
-   ========================= */
-.center {
-  text-align: center;
-  margin: 10px;
-}
-
-#result {
-  text-align: center;
-  margin-top: 10px;
 }
