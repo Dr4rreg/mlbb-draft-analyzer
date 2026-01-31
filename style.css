@@ -1,3 +1,7 @@
+/* =========================
+   BASE PAGE STYLES
+   ========================= */
+
 body {
   background-color: #0f172a;
   color: #e5e7eb;
@@ -11,10 +15,15 @@ h1 {
   margin: 10px 0;
 }
 
+/* =========================
+   TURN INDICATOR & TIMER
+   ========================= */
+
 #turnIndicator {
   text-align: center;
   font-weight: bold;
   font-size: 18px;
+  margin-top: 4px;
 }
 
 #timer {
@@ -23,114 +32,44 @@ h1 {
   margin-bottom: 10px;
 }
 
-/* ================= DRAFT UI ================= */
+/* =========================
+   DRAFT UI WRAPPER
+   ========================= */
 
 #draftUI {
   max-width: 1200px;
   margin: 0 auto 10px;
 }
 
+/* Each row (bans / picks) */
 .draftRow {
   display: flex;
   justify-content: space-between;
   margin-bottom: 8px;
 }
 
+/* Blue / Red side containers */
 .side {
   width: 48%;
 }
 
+/* Rows holding icons */
 .banRow,
 .pickRow {
   display: flex;
   gap: 6px;
 }
 
+/* Red side mirror */
 .reverse {
   flex-direction: row-reverse;
 }
-
-.banIcon,
-.pickIcon {
-  width: 64px;
-  height: 64px;
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.banIcon img,
-.pickIcon img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* BANS GREYED */
-.banIcon img {
-  filter: grayscale(100%) brightness(70%);
-}
-
-/* ================= HERO POOL ================= */
-
-#heroGrid {
-  display: grid;
-  grid-template-columns: repeat(10, 1fr);
-  gap: 4px;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 6px;
-}
-
-.heroBtn {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  border: 1px solid #334155;
-  border-radius: 6px;
-  background: #1e293b;
-  padding: 0;
-  cursor: pointer;
-  overflow: hidden;
-}
-
-.heroBtn img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.heroName {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  background: rgba(0,0,0,0.65);
-  font-size: 11px;
-  text-align: center;
-  padding: 2px;
-  line-height: 1.1;
-}
-
-.heroBtn.locked {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.center {
-  text-align: center;
-  margin: 10px;
-}
-
-#result {
-  text-align: center;
-  margin-top: 10px;
-}
-
 
 /* =========================
    DRAFT ICONS (PICKS & BANS)
    ========================= */
 
-/* Picks & bans are larger than hero pool */
+/* Picks & bans larger than hero pool */
 .banIcon,
 .pickIcon {
   width: 84px;
@@ -157,7 +96,7 @@ h1 {
 }
 
 /* =========================
-   HERO POOL (UNCHANGED SIZE)
+   HERO POOL GRID
    ========================= */
 
 #heroGrid {
@@ -169,6 +108,7 @@ h1 {
   padding: 6px;
 }
 
+/* Hero button */
 .heroBtn {
   position: relative;
   width: 100%;
@@ -181,12 +121,14 @@ h1 {
   overflow: hidden;
 }
 
+/* Hero image */
 .heroBtn img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
+/* Hero name (ONLY in hero pool) */
 .heroName {
   position: absolute;
   bottom: 0;
@@ -196,4 +138,26 @@ h1 {
   text-align: center;
   padding: 2px;
   line-height: 1.1;
+  pointer-events: none;
+}
+
+/* Locked heroes */
+.heroBtn.locked {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* =========================
+   ANALYZE / RESULT
+   ========================= */
+
+.center {
+  text-align: center;
+  margin: 10px;
+}
+
+#result {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 16px;
 }
