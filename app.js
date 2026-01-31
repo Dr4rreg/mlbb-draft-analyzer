@@ -37,7 +37,7 @@ const draftOrder = [
 window.onload = () => {
   renderHeroPool();
   updateTurn();
-  startTimer();
+  startStepTimer(); // start timer for first step
 };
 
 /* ================= HERO POOL ================= */
@@ -62,6 +62,7 @@ function renderHeroPool() {
     const name = document.createElement("div");
     name.className = "heroName";
     name.innerText = hero.name;
+    name.style.color = "white"; // HERO NAME COLOR
 
     btn.appendChild(img);
     btn.appendChild(name);
@@ -80,18 +81,16 @@ function setRoleFilter(role) {
 
 function matchesRoleFilter(hero) {
   if (selectedRole === "All") return true;
-
   if (hero.role && hero.role === selectedRole) return true;
   if (hero.roles && hero.roles.includes(selectedRole)) return true;
-
   return false;
 }
 
 /* ================= TIMER ================= */
 
-function startTimer() {
+function startStepTimer() {
   clearInterval(interval);
-  timer = 50;
+  timer = 50; // reset timer at start of step
   document.getElementById("timer").innerText = timer;
 
   interval = setInterval(() => {
@@ -117,16 +116,14 @@ function autoResolve() {
     for (let i = 0; i < needed; i++) {
       const available = getAvailableHeroes();
       if (!available.length) break;
-      forceSelect(randomHero(available));
+      forceSelect(randomHero(available), false); // false = don't restart timer inside
     }
   } else {
-    // Ban skipped intentionally; placeholder remains
     addSkippedBan(current.side);
     step++;
   }
 
-  updateTurn();
-  startTimer();
+  nextStep();
 }
 
 function isSimultaneousPick(stepIndex) {
@@ -151,7 +148,7 @@ function selectHero(hero, btn) {
   forceSelect(hero);
 }
 
-function forceSelect(hero) {
+function forceSelect(hero, restartTimer = true) {
   const current = draftOrder[step];
   if (!current) return;
 
@@ -164,8 +161,7 @@ function forceSelect(hero) {
   }
 
   step++;
-  updateTurn();
-  startTimer();
+  if (restartTimer) nextStep(); // only restart timer once per step
   renderHeroPool();
 }
 
@@ -176,10 +172,7 @@ function getAvailableHeroes() {
 }
 
 function isHeroLocked(name) {
-  return (
-    picks.some(p => p.hero === name) ||
-    bans.some(b => b.hero === name)
-  );
+  return picks.some(p => p.hero === name) || bans.some(b => b.hero === name);
 }
 
 function randomHero(list) {
@@ -212,7 +205,7 @@ function addSkippedBan(side) {
 
 /* ================= TURN ================= */
 
-function updateTurn() {
+function nextStep() {
   if (
     picks.filter(p => p.side === "Blue").length === 5 &&
     picks.filter(p => p.side === "Red").length === 5 &&
@@ -230,29 +223,31 @@ function updateTurn() {
     document.getElementById("turnIndicator").innerText =
       `${c.side} Team — ${c.type.toUpperCase()}`;
   }
+
+  startStepTimer(); // start timer for this step
 }
 
 /* ================= LANE COVERAGE ANALYTICS ================= */
 
-// Check if a team can cover all 5 lanes: Exp, Jungle, Mid, Roam, Gold
 function checkLaneCoverage(teamPicks) {
   const lanes = ["Exp", "Jungle", "Mid", "Roam", "Gold"];
   const assigned = new Set();
+  const missing = new Set(lanes);
 
   for (let heroName of teamPicks) {
     const hero = heroes.find(h => h.name === heroName);
     if (!hero || !hero.lanes) continue;
 
-    // Assign the first lane that hasn't been covered yet
     for (let lane of hero.lanes) {
       if (!assigned.has(lane)) {
         assigned.add(lane);
+        missing.delete(lane);
         break;
       }
     }
   }
 
-  return assigned.size === lanes.length; // true if all 5 lanes covered
+  return { full: assigned.size === lanes.length, missing: Array.from(missing) };
 }
 
 /* ================= ANALYSIS ================= */
@@ -264,9 +259,17 @@ function analyzeDraft() {
   let blueScore = 0;
   let redScore = 0;
 
-  if (checkLaneCoverage(blueHeroes)) blueScore += 10;
-  if (checkLaneCoverage(redHeroes)) redScore += 10;
+  const blueCoverage = checkLaneCoverage(blueHeroes);
+  const redCoverage = checkLaneCoverage(redHeroes);
 
-  document.getElementById("result").innerText =
-    `Blue Team Score: ${blueScore}\nRed Team Score: ${redScore}`;
+  if (blueCoverage.full) blueScore += 10;
+  if (redCoverage.full) redScore += 10;
+
+  let resultText = `Blue Team Score: ${blueScore}`;
+  if (!blueCoverage.full) resultText += ` (Missing lanes: ${blueCoverage.missing.join(", ")})`;
+
+  resultText += `\nRed Team Score: ${redScore}`;
+  if (!redCoverage.full) resultText += ` (Missing lanes: ${redCoverage.missing.join(", ")})`;
+
+  document.getElementById("result").innerText = resultText;
 }
