@@ -3,55 +3,58 @@
 <head>
   <meta charset="UTF-8" />
   <title>MLBB Draft Simulator</title>
-  <link rel="stylesheet" href="style.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-<h1>MLBB Draft Simulator</h1>
+  <h1>MLBB Draft Simulator</h1>
 
-<!-- Turn / Phase Indicator -->
-<div id="turnIndicator">Loading...</div>
+  <div id="turnIndicator">Loading...</div>
+  <div id="timer">50</div>
 
-<!-- TIMER -->
-<div id="timer" style="text-align:center; font-weight:bold; margin-bottom:8px;">50</div>
+  <!-- DRAFT UI -->
+  <div id="draftUI">
 
-<!-- HERO POOL GRID -->
-<div id="heroGrid"></div>
+    <div class="draftRow">
+      <div class="draftSide blue">
+        <div class="label">Blue Bans</div>
+        <div class="banRow" id="blueBans"></div>
+      </div>
 
-<!-- DRAFT AREA -->
-<div id="draftArea">
+      <div class="draftSide red">
+        <div class="label">Red Bans</div>
+        <div class="banRow reverse" id="redBans"></div>
+      </div>
+    </div>
 
-  <!-- Blue side -->
-  <div class="teamColumn">
-    <h2>Blue Bans</h2>
-    <div id="blueBans" class="banRow"></div>
-    <h2>Blue Picks</h2>
-    <div id="bluePicks" class="pickColumn"></div>
+    <div class="draftRow">
+      <div class="draftSide blue">
+        <div class="label">Blue Picks</div>
+        <div class="pickRow" id="bluePicks"></div>
+      </div>
+
+      <div class="draftSide red">
+        <div class="label">Red Picks</div>
+        <div class="pickRow reverse" id="redPicks"></div>
+      </div>
+    </div>
+
   </div>
 
-  <!-- Red side -->
-  <div class="teamColumn">
-    <h2>Red Bans</h2>
-    <div id="redBans" class="banRow"></div>
-    <h2>Red Picks</h2>
-    <div id="redPicks" class="pickColumn"></div>
+  <!-- HERO POOL -->
+  <div id="heroGrid"></div>
+
+  <div style="text-align:center; margin: 12px;">
+    <button id="analyzeBtn" onclick="analyzeDraft()" disabled>
+      Analyze Draft
+    </button>
   </div>
 
-</div>
+  <div id="result"></div>
 
-<!-- Analyze Button -->
-<div style="text-align:center; margin: 10px;">
-  <button id="analyzeBtn" onclick="analyzeDraft()" disabled>
-    Analyze Draft
-  </button>
-</div>
-
-<!-- Result Output -->
-<div id="result"></div>
-
-<script src="heroes.js"></script>
-<script src="app.js"></script>
-
+  <script src="heroes.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
