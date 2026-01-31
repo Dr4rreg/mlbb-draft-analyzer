@@ -276,38 +276,51 @@ function calculateMetaScore(side) {
   const teamPicks = picks.filter(p => p.side === side);
   let score = 0;
 
-  // Map of lane => highest tier score found
+  // Track best hero score per lane
   const laneBestScore = {};
 
-  teamPicks.forEach(pick => {
-    const hero = heroes.find(h => h.name === pick.hero);
-    if (!hero || !hero.metaTier) return;
-    if (!hero.lanes.includes(pick.lane)) return; // 0 if wrong lane
+  // All possible lanes
+  const allLanes = ["Exp", "Jungle", "Mid", "Roam", "Gold"];
 
-    // Determine numeric value of metaTier
-    let heroScore = 0;
-    switch (hero.metaTier) {
-      case "S": heroScore = 10; break;
-      case "A": heroScore = 8; break;
-      case "B": heroScore = 6; break;
-      case "Situational": heroScore = 4; break;
-      case "F": heroScore = 2; break;
-    }
+  // Loop through all lanes
+  allLanes.forEach(lane => {
+    let bestScoreForLane = 0;
 
-    // Compare against current best for the lane
-    if (!laneBestScore[pick.lane] || heroScore > laneBestScore[pick.lane]) {
-      laneBestScore[pick.lane] = heroScore;
+    teamPicks.forEach(pick => {
+      const hero = heroes.find(h => h.name === pick.hero);
+      if (!hero || !hero.metaTier) return;
+
+      // Only consider heroes that can go to this lane
+      if (!hero.lanes.includes(lane)) return;
+
+      let heroScore = 0;
+      switch (hero.metaTier) {
+        case "S": heroScore = 10; break;
+        case "A": heroScore = 8; break;
+        case "B": heroScore = 6; break;
+        case "Situational": heroScore = 4; break;
+        case "F": heroScore = 2; break;
+      }
+
+      // Keep the highest scoring hero for this lane
+      if (heroScore > bestScoreForLane) {
+        bestScoreForLane = heroScore;
+      }
+    });
+
+    // Add the best score for this lane
+    if (bestScoreForLane > 0) {
+      laneBestScore[lane] = bestScoreForLane;
     }
   });
 
-  // Sum the highest scores per lane
+  // Sum scores from all lanes
   for (let l in laneBestScore) {
     score += laneBestScore[l];
   }
 
   return score;
 }
-
 /* ================= ANALYSIS ================= */
 function analyzeDraft() {
   const blueHeroes = picks.filter(p => p.side === "Blue").map(p => p.hero);
