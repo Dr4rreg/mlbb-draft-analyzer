@@ -2,7 +2,7 @@ let step = 0;
 let timer = 50;
 let interval = null;
 
-/* MPL ORDER */
+/* MPL DRAFT ORDER */
 const draftOrder = [
   { type: "ban", side: "Blue" },
   { type: "ban", side: "Red" },
@@ -38,6 +38,9 @@ window.onload = () => {
   startTimer();
 };
 
+// =========================
+// RENDER HERO POOL
+// =========================
 function renderHeroPool() {
   const grid = document.getElementById("heroGrid");
   grid.innerHTML = "";
@@ -45,22 +48,27 @@ function renderHeroPool() {
   heroes.forEach(hero => {
     const btn = document.createElement("button");
     btn.className = "heroBtn";
+    btn.dataset.hero = hero.name; // for reliable matching
 
     const img = document.createElement("img");
     img.src = hero.icon;
+    btn.appendChild(img);
 
     const name = document.createElement("div");
     name.className = "heroName";
     name.innerText = hero.name;
-
-    btn.appendChild(img);
+    name.style.pointerEvents = "none"; // allow clicks to pass through
     btn.appendChild(name);
 
     btn.onclick = () => selectHero(hero, btn);
+
     grid.appendChild(btn);
   });
 }
 
+// =========================
+// START TIMER
+// =========================
 function startTimer() {
   clearInterval(interval);
   timer = 50;
@@ -77,33 +85,50 @@ function startTimer() {
   }, 1000);
 }
 
+// =========================
+// AUTO-RESOLVE IF TIME RUNS OUT
+// =========================
 function autoResolve() {
   const current = draftOrder[step];
   if (!current) return;
 
   if (current.type === "pick") {
+    // Pick a random hero that isn't already picked or banned
     const available = heroes.filter(h =>
       !picks.some(p => p.hero === h.name) &&
       !bans.some(b => b.hero === h.name)
     );
     if (available.length) {
       forceSelect(available[Math.floor(Math.random() * available.length)]);
+    } else {
+      step++;
+      updateTurn();
+      startTimer();
     }
+  } else if (current.type === "ban") {
+    // Skip ban if no hero selected
+    step++;
+    updateTurn();
+    startTimer();
   }
-
-  step++;
-  updateTurn();
-  startTimer();
 }
 
+// =========================
+// HERO SELECTION
+// =========================
 function selectHero(hero, btn) {
-  if (btn.classList.contains("locked")) return;
+  if (btn.disabled) return;
   clearInterval(interval);
 
   forceSelect(hero);
+
   btn.classList.add("locked");
+  btn.disabled = true;
 }
 
+// =========================
+// FORCE SELECT (ADD HERO TO DRAFT)
+// =========================
 function forceSelect(hero) {
   const current = draftOrder[step];
   if (!current) return;
@@ -116,22 +141,27 @@ function forceSelect(hero) {
     addIcon(current.side, hero.icon, false);
   }
 
-  document.querySelectorAll(".heroBtn").forEach(b => {
-    if (b.innerText === hero.name) b.classList.add("locked");
-  });
+  // LOCK hero in hero pool
+  const btn = document.querySelector(`.heroBtn[data-hero='${hero.name}']`);
+  if (btn) {
+    btn.classList.add("locked");
+    btn.disabled = true;
+  }
 
   step++;
   updateTurn();
   startTimer();
 }
 
+// =========================
+// ADD ICON TO DRAFT UI
+// =========================
 function addIcon(side, icon, isBan) {
   const div = document.createElement("div");
   div.className = isBan ? "banIcon" : "pickIcon";
 
   const img = document.createElement("img");
   img.src = icon;
-
   div.appendChild(img);
 
   const id =
@@ -142,6 +172,9 @@ function addIcon(side, icon, isBan) {
   document.getElementById(id).appendChild(div);
 }
 
+// =========================
+// UPDATE TURN INDICATOR
+// =========================
 function updateTurn() {
   if (step >= draftOrder.length) {
     document.getElementById("turnIndicator").innerText = "Draft Complete!";
@@ -155,6 +188,9 @@ function updateTurn() {
     `${c.side} Team — ${c.type.toUpperCase()}`;
 }
 
+// =========================
+// ANALYZE DRAFT BUTTON
+// =========================
 function analyzeDraft() {
   document.getElementById("result").innerText = "Draft analysis coming in Phase 4 😉";
 }
