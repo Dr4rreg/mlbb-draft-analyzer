@@ -1,7 +1,8 @@
 let step = 0;
-let timeLeft = 50;
-let timerInterval = null;
+let timer = 50;
+let interval = null;
 
+/* MPL ORDER */
 const draftOrder = [
   { type: "ban", side: "Blue" },
   { type: "ban", side: "Red" },
@@ -9,16 +10,19 @@ const draftOrder = [
   { type: "ban", side: "Red" },
   { type: "ban", side: "Blue" },
   { type: "ban", side: "Red" },
+
   { type: "pick", side: "Blue" },
   { type: "pick", side: "Red" },
   { type: "pick", side: "Red" },
   { type: "pick", side: "Blue" },
   { type: "pick", side: "Blue" },
   { type: "pick", side: "Red" },
+
   { type: "ban", side: "Red" },
   { type: "ban", side: "Blue" },
   { type: "ban", side: "Red" },
   { type: "ban", side: "Blue" },
+
   { type: "pick", side: "Red" },
   { type: "pick", side: "Blue" },
   { type: "pick", side: "Blue" },
@@ -29,113 +33,128 @@ const picks = [];
 const bans = [];
 
 window.onload = () => {
-  const heroGrid = document.getElementById("heroGrid");
+  renderHeroPool();
+  updateTurn();
+  startTimer();
+};
+
+function renderHeroPool() {
+  const grid = document.getElementById("heroGrid");
+  grid.innerHTML = "";
 
   heroes.forEach(hero => {
     const btn = document.createElement("button");
     btn.className = "heroBtn";
-    btn.dataset.hero = hero.name;
 
-    btn.innerHTML = `
-      <div class="heroIcon">
-        <img src="${hero.icon}">
-        <div class="name">${hero.name}</div>
-      </div>
-    `;
+    const img = document.createElement("img");
+    img.src = hero.icon;
 
-    btn.onclick = () => selectHero(hero.name, btn);
-    heroGrid.appendChild(btn);
+    const name = document.createElement("div");
+    name.className = "heroName";
+    name.innerText = hero.name;
+
+    btn.appendChild(img);
+    btn.appendChild(name);
+
+    btn.onclick = () => selectHero(hero, btn);
+    grid.appendChild(btn);
   });
-
-  startTimer();
-};
+}
 
 function startTimer() {
-  clearInterval(timerInterval);
-  timeLeft = 50;
-  document.getElementById("timer").innerText = timeLeft;
+  clearInterval(interval);
+  timer = 50;
+  document.getElementById("timer").innerText = timer;
 
-  timerInterval = setInterval(() => {
-    timeLeft--;
-    document.getElementById("timer").innerText = timeLeft;
+  interval = setInterval(() => {
+    timer--;
+    document.getElementById("timer").innerText = timer;
 
-    if (timeLeft <= 0) {
-      clearInterval(timerInterval);
-      handleTimeout();
+    if (timer <= 0) {
+      clearInterval(interval);
+      autoResolve();
     }
   }, 1000);
 }
 
-function selectHero(name, btn) {
-  if (step >= draftOrder.length) return;
-
+function autoResolve() {
   const current = draftOrder[step];
-
-  if (current.type === "ban") {
-    bans.push({ hero: name, side: current.side });
-    addDraftIcon(current.side, name, true);
-  } else {
-    picks.push({ hero: name, side: current.side });
-    addDraftIcon(current.side, name, false);
-  }
-
-  btn.classList.add("locked");
-  step++;
-
-  if (step === draftOrder.length) {
-    clearInterval(timerInterval);
-    document.getElementById("turnIndicator").innerText = "Draft Complete!";
-    document.getElementById("analyzeBtn").disabled = false;
-    return;
-  }
-
-  startTimer();
-}
-
-function handleTimeout() {
-  const current = draftOrder[step];
+  if (!current) return;
 
   if (current.type === "pick") {
     const available = heroes.filter(h =>
       !picks.some(p => p.hero === h.name) &&
       !bans.some(b => b.hero === h.name)
     );
-    if (available.length > 0) {
-      const hero = available[Math.floor(Math.random() * available.length)];
-      const btn = document.querySelector(`[data-hero="${hero.name}"]`);
-      selectHero(hero.name, btn);
+    if (available.length) {
+      forceSelect(available[Math.floor(Math.random() * available.length)]);
     }
-  } else {
-    step++;
-    startTimer();
   }
+
+  step++;
+  updateTurn();
+  startTimer();
 }
 
-function addDraftIcon(side, name, isBan) {
-  const containerId =
-    side === "Blue"
-      ? (isBan ? "blueBans" : "bluePicks")
-      : (isBan ? "redBans" : "redPicks");
+function selectHero(hero, btn) {
+  if (btn.classList.contains("locked")) return;
+  clearInterval(interval);
 
-  const hero = heroes.find(h => h.name === name);
+  forceSelect(hero);
+  btn.classList.add("locked");
+}
 
+function forceSelect(hero) {
+  const current = draftOrder[step];
+  if (!current) return;
+
+  if (current.type === "ban") {
+    bans.push({ hero: hero.name, side: current.side });
+    addIcon(current.side, hero.icon, true);
+  } else {
+    picks.push({ hero: hero.name, side: current.side });
+    addIcon(current.side, hero.icon, false);
+  }
+
+  document.querySelectorAll(".heroBtn").forEach(b => {
+    if (b.innerText === hero.name) b.classList.add("locked");
+  });
+
+  step++;
+  updateTurn();
+  startTimer();
+}
+
+function addIcon(side, icon, isBan) {
   const div = document.createElement("div");
-  div.className = `draftIcon ${isBan ? "banned" : ""}`;
-  div.innerHTML = `
-    <img src="${hero.icon}">
-    <div class="name">${hero.name}</div>
-  `;
+  div.className = isBan ? "banIcon" : "pickIcon";
 
-  document.getElementById(containerId).appendChild(div);
+  const img = document.createElement("img");
+  img.src = icon;
+
+  div.appendChild(img);
+
+  const id =
+    side === "Blue"
+      ? isBan ? "blueBans" : "bluePicks"
+      : isBan ? "redBans" : "redPicks";
+
+  document.getElementById(id).appendChild(div);
+}
+
+function updateTurn() {
+  if (step >= draftOrder.length) {
+    document.getElementById("turnIndicator").innerText = "Draft Complete!";
+    document.getElementById("analyzeBtn").disabled = false;
+    clearInterval(interval);
+    return;
+  }
+
+  const c = draftOrder[step];
+  document.getElementById("turnIndicator").innerText =
+    `${c.side} Team — ${c.type.toUpperCase()}`;
 }
 
 function analyzeDraft() {
-  const score = side =>
-    picks.filter(p => p.side === side).reduce((s, p) => {
-      const h = heroes.find(x => x.name === p.hero);
-      return s + h.early + h.late + h.cc;
-    }, 0);
-
-  document.getElementById("result").innerHTML =
-    `Blue: ${score("Blue")} | Red: ${score("Red")}`;
+  document.getElementById("result").innerText = "Draft analysis coming in Phase 4 😉";
 }
