@@ -1,6 +1,7 @@
 let step = 0;
 let timer = 50;
 let interval = null;
+let currentRoleFilter = "All"; // Default role filter
 
 /* MPL DRAFT ORDER */
 const draftOrder = [
@@ -33,10 +34,31 @@ const picks = [];
 const bans = [];
 
 window.onload = () => {
-  renderHeroPool();
+  setupRoleFilter();   // Initialize role filter buttons
+  renderHeroPool();    // Render hero pool based on filter
   updateTurn();
   startTimer();
 };
+
+// =========================
+// SETUP ROLE FILTER BUTTONS
+// =========================
+function setupRoleFilter() {
+  const buttons = document.querySelectorAll(".roleBtn");
+  buttons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      // Update current filter
+      currentRoleFilter = btn.dataset.role;
+
+      // Update active button styling
+      buttons.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      // Re-render hero pool with new filter
+      renderHeroPool();
+    });
+  });
+}
 
 // =========================
 // RENDER HERO POOL
@@ -45,25 +67,32 @@ function renderHeroPool() {
   const grid = document.getElementById("heroGrid");
   grid.innerHTML = "";
 
-  heroes.forEach(hero => {
-    const btn = document.createElement("button");
-    btn.className = "heroBtn";
-    btn.dataset.hero = hero.name;
+  heroes
+    .filter(hero => currentRoleFilter === "All" || hero.role === currentRoleFilter)
+    .forEach(hero => {
+      const btn = document.createElement("button");
+      btn.className = "heroBtn";
+      btn.dataset.hero = hero.name;
 
-    const img = document.createElement("img");
-    img.src = hero.icon;
-    btn.appendChild(img);
+      const img = document.createElement("img");
+      img.src = hero.icon;
+      btn.appendChild(img);
 
-    const name = document.createElement("div");
-    name.className = "heroName";
-    name.innerText = hero.name;
-    name.style.pointerEvents = "none";
-    btn.appendChild(name);
+      const name = document.createElement("div");
+      name.className = "heroName";
+      name.innerText = hero.name;
+      name.style.pointerEvents = "none";
+      btn.appendChild(name);
 
-    btn.onclick = () => selectHero(hero, btn);
+      // Disable if already picked/banned
+      if (picks.some(p => p.hero === hero.name) || bans.some(b => b.hero === hero.name)) {
+        btn.classList.add("locked");
+        btn.disabled = true;
+      }
 
-    grid.appendChild(btn);
-  });
+      btn.onclick = () => selectHero(hero, btn);
+      grid.appendChild(btn);
+    });
 }
 
 // =========================
