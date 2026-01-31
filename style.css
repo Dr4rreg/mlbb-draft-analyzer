@@ -69,17 +69,17 @@ h1 {
    DRAFT ICONS (PICKS & BANS)
    ========================= */
 
-/* Picks & bans larger than hero pool */
-.banIcon,
-.pickIcon {
-  width: 84px;
-  height: 84px;
+/* -------------------------
+   BAN ICONS (slightly bigger)
+   ------------------------- */
+.banIcon {
+  width: 96px;       
+  height: 96px;      
   border-radius: 8px;
   overflow: hidden;
   flex-shrink: 0;
 }
 
-/* BAN: cropped + greyed (MPL style) */
 .banIcon img {
   width: 100%;
   height: 100%;
@@ -87,11 +87,21 @@ h1 {
   filter: grayscale(100%) brightness(65%);
 }
 
-/* PICK: full original image, no cropping */
+/* -------------------------
+   PICK ICONS (rectangular)
+   ------------------------- */
+.pickIcon {
+  width: 96px;       /* same width as bans */
+  height: 132px;     /* taller vertically */
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
 .pickIcon img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;  /* fills rectangle */
   background-color: #020617;
 }
 
