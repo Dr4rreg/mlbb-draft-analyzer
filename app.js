@@ -132,12 +132,26 @@ function autoResolve() {
 // =========================
 function selectHero(hero, btn) {
   if (btn.disabled) return;
+
+  // Stop current timer
   clearInterval(interval);
 
+  // Add hero to draft
   forceSelect(hero);
 
+  // Lock hero in pool
   btn.classList.add("locked");
   btn.disabled = true;
+
+  // Update turn and restart timer for next phase
+  if (!isDraftComplete()) {
+    updateTurn();
+    startTimer(); // <-- key fix: restart timer on manual pick/ban
+  } else {
+    // Draft complete
+    document.getElementById("turnIndicator").innerText = "Draft Complete!";
+    document.getElementById("analyzeBtn").disabled = false;
+  }
 }
 
 // =========================
@@ -155,7 +169,7 @@ function forceSelect(hero, incrementStep = true) {
     addIcon(current.side, hero.icon, false);
   }
 
-  // LOCK hero in hero pool
+  // Lock hero in hero pool
   const btn = document.querySelector(`.heroBtn[data-hero='${hero.name}']`);
   if (btn) {
     btn.classList.add("locked");
@@ -163,7 +177,6 @@ function forceSelect(hero, incrementStep = true) {
   }
 
   if (incrementStep) step++;
-  updateTurn();
 }
 
 // =========================
