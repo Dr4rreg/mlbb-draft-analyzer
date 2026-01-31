@@ -276,26 +276,34 @@ function calculateMetaScore(side) {
   const teamPicks = picks.filter(p => p.side === side);
   let score = 0;
 
-  const laneUsed = new Set(); // ensure lane only awards points once
+  // Map of lane => highest tier score found
+  const laneBestScore = {};
 
   teamPicks.forEach(pick => {
     const hero = heroes.find(h => h.name === pick.hero);
     if (!hero || !hero.metaTier) return;
+    if (!hero.lanes.includes(pick.lane)) return; // 0 if wrong lane
 
-    if (!hero.lanes.includes(pick.lane)) return;
+    // Determine numeric value of metaTier
+    let heroScore = 0;
+    switch (hero.metaTier) {
+      case "S": heroScore = 10; break;
+      case "A": heroScore = 8; break;
+      case "B": heroScore = 6; break;
+      case "Situational": heroScore = 4; break;
+      case "F": heroScore = 2; break;
+    }
 
-    // award points only once per lane
-    if (!laneUsed.has(pick.lane)) {
-      laneUsed.add(pick.lane);
-      switch (hero.metaTier) {
-        case "S": score += 10; break;
-        case "A": score += 8; break;
-        case "B": score += 6; break;
-        case "Situational": score += 4; break;
-        case "F": score += 2; break;
-      }
+    // Compare against current best for the lane
+    if (!laneBestScore[pick.lane] || heroScore > laneBestScore[pick.lane]) {
+      laneBestScore[pick.lane] = heroScore;
     }
   });
+
+  // Sum the highest scores per lane
+  for (let l in laneBestScore) {
+    score += laneBestScore[l];
+  }
 
   return score;
 }
