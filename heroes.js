@@ -126,7 +126,7 @@ const heroes = [
   { name: "Zhuxin", roles: ["Mage"], lanes: ["Mid"], icon: "icons/Zhuxin.png", metaTier: "S", earlyMid: 5, late: 4 },
   { name: "Suyou", roles: ["Assassin", "Fighter"], lanes: ["Jungle"], icon: "icons/Suyou.png", metaTier: "B", earlyMid: 4, late: 3 },
   { name: "Lukas", roles: ["Fighter"], lanes: ["Exp", "Jungle"], icon: "icons/Lukas.png", metaTier: "B", earlyMid: 4, late: 3 },
-  { name: "Kalea", roles: ["Support"], lanes: ["Roam"], icon: "icons/Kalea.png", metaTier: "A", earlyMid: 4, late: 4 },
+  { name: "Kalea", roles: ["Fighter", "Support"], lanes: ["Roam"], icon: "icons/Kalea.png", metaTier: "A", earlyMid: 4, late: 4 },
   { name: "Zetian", roles: ["Mage"], lanes: ["Mid"], icon: "icons/Zetian.png", metaTier: "Situational", earlyMid: 3, late: 5 },
   { name: "Obsidia", roles: ["Marksman"], lanes: ["Gold"], icon: "icons/Obsidia.png", metaTier: "B", earlyMid: 2, late: 5 },
   { name: "Sora", roles: ["Fighter", "Assassin"], lanes: ["Exp", "Gold"], icon: "icons/Sora.png", metaTier: "S", earlyMid: 5, late: 4 }
