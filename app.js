@@ -271,13 +271,13 @@ function assignHeroesOptimally(heroNames) {
 
 /* ================= LANE COVERAGE ================= */
 function checkLaneCoverage(heroNames) {
-  return Object.keys(assignHeroesOptimally(heroNames)).length === 5;
+  const assignment = assignHeroesOptimally(heroNames);
+  return Object.keys(assignment).length === 5 ? 10 : 0;
 }
 
 /* ================= METATIER SCORING ================= */
-function calculateMetaScore(side) {
-  const teamHeroes = picks.filter(p => p.side === side).map(p => p.hero);
-  const assignment = assignHeroesOptimally(teamHeroes);
+function calculateMetaScore(heroNames) {
+  const assignment = assignHeroesOptimally(heroNames);
 
   let score = 0;
   Object.values(assignment).forEach(hero => {
@@ -294,9 +294,8 @@ function calculateMetaScore(side) {
 }
 
 /* ================= EARLY/MID AND LATE ================= */
-function calculateEarlyLate(side) {
-  const teamHeroes = picks.filter(p => p.side === side).map(p => p.hero);
-  const assignment = assignHeroesOptimally(teamHeroes);
+function calculateEarlyLate(heroNames) {
+  const assignment = assignHeroesOptimally(heroNames);
 
   let earlySum = 0;
   let lateSum = 0;
@@ -319,14 +318,14 @@ function analyzeDraft() {
   const blueHeroes = picks.filter(p => p.side === "Blue").map(p => p.hero);
   const redHeroes = picks.filter(p => p.side === "Red").map(p => p.hero);
 
-  const blueLanePoints = checkLaneCoverage(blueHeroes) ? 10 : 0;
-  const redLanePoints = checkLaneCoverage(redHeroes) ? 10 : 0;
+  const blueLanePoints = checkLaneCoverage(blueHeroes);
+  const redLanePoints = checkLaneCoverage(redHeroes);
 
-  const blueMeta = calculateMetaScore("Blue");
-  const redMeta = calculateMetaScore("Red");
+  const blueMeta = calculateMetaScore(blueHeroes);
+  const redMeta = calculateMetaScore(redHeroes);
 
-  const blueEarlyLate = calculateEarlyLate("Blue");
-  const redEarlyLate = calculateEarlyLate("Red");
+  const blueEarlyLate = calculateEarlyLate(blueHeroes);
+  const redEarlyLate = calculateEarlyLate(redHeroes);
 
   const blueTotal = blueLanePoints + blueMeta + blueEarlyLate.earlyMid + blueEarlyLate.late;
   const redTotal = redLanePoints + redMeta + redEarlyLate.earlyMid + redEarlyLate.late;
