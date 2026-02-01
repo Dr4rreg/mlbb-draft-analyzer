@@ -34,8 +34,6 @@ const draftOrder = [
   { type: "pick", side: "Red", phase: "R5" }
 ];
 
-let currentPhase = null;
-
 /* ================= INIT ================= */
 
 window.onload = () => {
@@ -58,16 +56,28 @@ function startTimer(reset = true) {
 
     if (timer <= 0) {
       clearInterval(interval);
-      autoResolvePhase();
+      autoResolve();
     }
   }, 1000);
 }
 
 /* ================= AUTO RESOLVE ================= */
 
-function autoResolvePhase() {
-  const phase = draftOrder[step]?.phase;
-  if (!phase) return;
+function autoResolve() {
+  const current = draftOrder[step];
+  if (!current) return;
+
+  // ---- BAN ----
+  if (current.type === "ban") {
+    addSkippedBan(current.side);
+    step++;
+    updateTurn();
+    startTimer(true);
+    return;
+  }
+
+  // ---- PICK PHASE ----
+  const phase = current.phase;
 
   while (draftOrder[step] && draftOrder[step].phase === phase) {
     const available = getAvailableHeroes();
@@ -128,16 +138,25 @@ function forceSelect(hero, allowTimerReset) {
   const current = draftOrder[step];
   if (!current) return;
 
-  const playedLane = hero.lanes[0];
+  // ---- BAN ----
+  if (current.type === "ban") {
+    bans.push({ hero: hero.name, side: current.side });
+    addIcon(current.side, hero.icon, true);
 
-  if (current.type === "pick") {
-    picks.push({
-      hero: hero.name,
-      side: current.side,
-      lane: playedLane
-    });
-    addIcon(current.side, hero.icon, false);
+    step++;
+    updateTurn();
+    startTimer(true);
+    renderHeroPool();
+    return;
   }
+
+  // ---- PICK ----
+  picks.push({
+    hero: hero.name,
+    side: current.side,
+    lane: hero.lanes[0]
+  });
+  addIcon(current.side, hero.icon, false);
 
   const prevPhase = current.phase;
   step++;
@@ -181,6 +200,14 @@ function addIcon(side, icon, isBan) {
   document.getElementById(id).appendChild(div);
 }
 
+function addSkippedBan(side) {
+  const div = document.createElement("div");
+  div.className = "banIcon skipped";
+
+  const id = side === "Blue" ? "blueBans" : "redBans";
+  document.getElementById(id).appendChild(div);
+}
+
 /* ================= TURN ================= */
 
 function updateTurn() {
@@ -192,50 +219,45 @@ function updateTurn() {
   }
 
   const c = draftOrder[step];
-  if (c) {
-    document.getElementById("turnIndicator").innerText =
-      `${c.side} Team — PICK`;
-  }
+  if (!c) return;
+
+  document.getElementById("turnIndicator").innerText =
+    `${c.side} Team — ${c.type.toUpperCase()}`;
 }
 
-/* ================= LANE COVERAGE ================= */
+/* ================= LANE + META ================= */
 
-function getMissingLanes(teamPicks) {
+function getMissingLanes(teamHeroes) {
   const lanes = ["Exp", "Jungle", "Mid", "Roam", "Gold"];
   const covered = new Set();
 
-  teamPicks.forEach(heroName => {
-    const hero = heroes.find(h => h.name === heroName);
-    if (!hero) return;
-    hero.lanes.forEach(l => covered.add(l));
+  teamHeroes.forEach(name => {
+    const hero = heroes.find(h => h.name === name);
+    hero?.lanes.forEach(l => covered.add(l));
   });
 
   return lanes.filter(l => !covered.has(l));
 }
 
-/* ================= METATIER SCORING ================= */
-
 function calculateMetaScore(side) {
-  const teamPicks = picks.filter(p => p.side === side);
+  const team = picks.filter(p => p.side === side);
   const lanes = ["Exp", "Jungle", "Mid", "Roam", "Gold"];
-
   let score = 0;
 
   lanes.forEach(lane => {
     let best = 0;
 
-    teamPicks.forEach(pick => {
-      const hero = heroes.find(h => h.name === pick.hero);
-      if (!hero || !hero.metaTier) return;
-      if (!hero.lanes.includes(lane)) return;
+    team.forEach(p => {
+      const hero = heroes.find(h => h.name === p.hero);
+      if (!hero || !hero.lanes.includes(lane)) return;
 
-      const tierScore =
+      const s =
         hero.metaTier === "S" ? 10 :
         hero.metaTier === "A" ? 8 :
         hero.metaTier === "B" ? 6 :
         hero.metaTier === "Situational" ? 4 : 2;
 
-      if (tierScore > best) best = tierScore;
+      if (s > best) best = s;
     });
 
     score += best;
@@ -259,13 +281,9 @@ function analyzeDraft() {
   if (blueMissing.length === 0) blueScore += 10;
   if (redMissing.length === 0) redScore += 10;
 
-  let result = `Blue Team Score: ${blueScore}`;
-  if (blueMissing.length)
-    result += `\nMissing lanes: ${blueMissing.join(", ")}`;
-
-  result += `\n\nRed Team Score: ${redScore}`;
-  if (redMissing.length)
-    result += `\nMissing lanes: ${redMissing.join(", ")}`;
-
-  document.getElementById("result").innerText = result;
+  document.getElementById("result").innerText =
+    `Blue Team Score: ${blueScore}` +
+    (blueMissing.length ? `\nMissing lanes: ${blueMissing.join(", ")}` : "") +
+    `\n\nRed Team Score: ${redScore}` +
+    (redMissing.length ? `\nMissing lanes: ${redMissing.join(", ")}` : "");
 }
