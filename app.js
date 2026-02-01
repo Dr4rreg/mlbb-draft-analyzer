@@ -1,3 +1,6 @@
+/***********************
+ * GLOBAL STATE
+ ***********************/
 let step = 0;
 let timer = 50;
 let interval = null;
@@ -8,7 +11,9 @@ let selectedRole = "All";
 const picks = [];
 const bans = [];
 
-/* MPL ORDER */
+/***********************
+ * DRAFT ORDER (MPL)
+ ***********************/
 const draftOrder = [
   { type: "ban", side: "Blue" },
   { type: "ban", side: "Red" },
@@ -19,9 +24,9 @@ const draftOrder = [
 
   { type: "pick", side: "Blue" },
   { type: "pick", side: "Red" },
-  { type: "pick", side: "Red" }, // R1 + R2
+  { type: "pick", side: "Red" },
   { type: "pick", side: "Blue" },
-  { type: "pick", side: "Blue" }, // B2 + B3
+  { type: "pick", side: "Blue" },
   { type: "pick", side: "Red" },
 
   { type: "ban", side: "Red" },
@@ -31,22 +36,75 @@ const draftOrder = [
 
   { type: "pick", side: "Red" },
   { type: "pick", side: "Blue" },
-  { type: "pick", side: "Blue" }, // B4 + B5
+  { type: "pick", side: "Blue" },
   { type: "pick", side: "Red" }
 ];
 
+/***********************
+ * INIT
+ ***********************/
 window.onload = () => {
   renderHeroPool();
   updateTurn();
-  startTimer();
+  startTimer(true);
 };
 
-/* ================= TIMER ================= */
+/***********************
+ * HERO POOL
+ ***********************/
+function renderHeroPool() {
+  const grid = document.getElementById("heroGrid");
+  grid.innerHTML = "";
 
+  heroes.forEach(hero => {
+    if (!matchesRoleFilter(hero)) return;
+
+    const btn = document.createElement("button");
+    btn.className = "heroBtn";
+
+    if (isHeroLocked(hero.name)) {
+      btn.classList.add("locked");
+    }
+
+    const img = document.createElement("img");
+    img.src = hero.icon;
+
+    const name = document.createElement("div");
+    name.className = "heroName";
+    name.innerText = hero.name;
+
+    btn.appendChild(img);
+    btn.appendChild(name);
+
+    btn.onclick = () => selectHero(hero, btn);
+    grid.appendChild(btn);
+  });
+}
+
+/***********************
+ * ROLE FILTER
+ ***********************/
+function setRoleFilter(role) {
+  selectedRole = role;
+  renderHeroPool();
+}
+
+function matchesRoleFilter(hero) {
+  if (selectedRole === "All") return true;
+  if (hero.role === selectedRole) return true;
+  if (hero.roles && hero.roles.includes(selectedRole)) return true;
+  return false;
+}
+
+/***********************
+ * TIMER
+ ***********************/
 function startTimer(reset = true) {
   clearInterval(interval);
 
-  if (reset) timer = 50;
+  if (reset) {
+    timer = 50;
+  }
 
   document.getElementById("timer").innerText = timer;
 
@@ -61,8 +119,9 @@ function startTimer(reset = true) {
   }, 1000);
 }
 
-/* ================= SIMULTANEOUS PICK ================= */
-
+/***********************
+ * SIMULTANEOUS PICK LOGIC
+ ***********************/
 function isSimultaneousPick(stepIndex) {
   const cur = draftOrder[stepIndex];
   const next = draftOrder[stepIndex + 1];
@@ -76,8 +135,16 @@ function isSimultaneousPick(stepIndex) {
   );
 }
 
-/* ================= AUTO RESOLVE ================= */
+function leavingSimultaneousPick(prevStep) {
+  return (
+    !isSimultaneousPick(prevStep) &&
+    !isSimultaneousPick(prevStep - 1)
+  );
+}
 
+/***********************
+ * AUTO RESOLVE
+ ***********************/
 function autoResolve() {
   const current = draftOrder[step];
   if (!current) return;
@@ -90,24 +157,14 @@ function autoResolve() {
   }
 
   updateTurn();
-
-  const stillSimul =
-    sharedTimerActive &&
-    isSimultaneousPick(step - 1);
-
-  if (!stillSimul) {
-    sharedTimerActive = false;
-    startTimer(true);
-  } else {
-    startTimer(false);
-  }
+  startTimer(true);
 }
 
-/* ================= SELECTION ================= */
-
+/***********************
+ * SELECTION
+ ***********************/
 function selectHero(hero, btn) {
   if (btn.classList.contains("locked")) return;
-
   clearInterval(interval);
   forceSelect(hero);
 }
@@ -126,13 +183,19 @@ function forceSelect(hero) {
     addIcon(current.side, hero.icon, false);
   }
 
-  const simul = isSimultaneousPick(step);
+  const prevStep = step;
   step++;
 
-  if (simul && !sharedTimerActive) {
+  const enteringSimul = isSimultaneousPick(prevStep);
+  const exitingSimul = leavingSimultaneousPick(prevStep);
+
+  if (enteringSimul && !sharedTimerActive) {
     sharedTimerActive = true;
     startTimer(false);
-  } else if (!sharedTimerActive) {
+  } else if (sharedTimerActive && !exitingSimul) {
+    startTimer(false);
+  } else {
+    sharedTimerActive = false;
     startTimer(true);
   }
 
@@ -140,50 +203,18 @@ function forceSelect(hero) {
   renderHeroPool();
 }
 
-/* ================= HERO POOL ================= */
-
-function renderHeroPool() {
-  const grid = document.getElementById("heroGrid");
-  grid.innerHTML = "";
-
-  heroes.forEach(hero => {
-    if (!matchesRoleFilter(hero)) return;
-
-    const btn = document.createElement("button");
-    btn.className = "heroBtn";
-
-    if (isHeroLocked(hero.name)) btn.classList.add("locked");
-
-    btn.innerHTML = `
-      <img src="${hero.icon}">
-      <div class="heroName">${hero.name}</div>
-    `;
-
-    btn.onclick = () => selectHero(hero, btn);
-    grid.appendChild(btn);
-  });
-}
-
-/* ================= ROLE FILTER ================= */
-
-function setRoleFilter(role) {
-  selectedRole = role;
-  renderHeroPool();
-}
-
-function matchesRoleFilter(hero) {
-  if (selectedRole === "All") return true;
-  return hero.lanes?.includes(selectedRole);
-}
-
-/* ================= HELPERS ================= */
-
+/***********************
+ * HELPERS
+ ***********************/
 function getAvailableHeroes() {
   return heroes.filter(h => !isHeroLocked(h.name));
 }
 
 function isHeroLocked(name) {
-  return picks.some(p => p.hero === name) || bans.some(b => b.hero === name);
+  return (
+    picks.some(p => p.hero === name) ||
+    bans.some(b => b.hero === name)
+  );
 }
 
 function randomHero(list) {
@@ -193,7 +224,10 @@ function randomHero(list) {
 function addIcon(side, icon, isBan) {
   const div = document.createElement("div");
   div.className = isBan ? "banIcon" : "pickIcon";
-  div.innerHTML = `<img src="${icon}">`;
+
+  const img = document.createElement("img");
+  img.src = icon;
+  div.appendChild(img);
 
   const id =
     side === "Blue"
@@ -206,14 +240,19 @@ function addIcon(side, icon, isBan) {
 function addSkippedBan(side) {
   const div = document.createElement("div");
   div.className = "banIcon skipped";
-  document.getElementById(side === "Blue" ? "blueBans" : "redBans")
-    .appendChild(div);
+
+  const id = side === "Blue" ? "blueBans" : "redBans";
+  document.getElementById(id).appendChild(div);
 }
 
-/* ================= TURN ================= */
-
+/***********************
+ * TURN INDICATOR
+ ***********************/
 function updateTurn() {
-  if (picks.length === 10 && bans.length === 10) {
+  if (
+    picks.filter(p => p.side === "Blue").length === 5 &&
+    picks.filter(p => p.side === "Red").length === 5
+  ) {
     document.getElementById("turnIndicator").innerText = "Draft Complete!";
     document.getElementById("analyzeBtn").disabled = false;
     clearInterval(interval);
@@ -227,64 +266,62 @@ function updateTurn() {
   }
 }
 
-/* ================= LANE ANALYTICS ================= */
-
-const ALL_LANES = ["Exp", "Jungle", "Mid", "Roam", "Gold"];
-
-function getMissingLanes(side) {
-  const teamPicks = picks.filter(p => p.side === side);
+/***********************
+ * LANE COVERAGE + MISSING LANES
+ ***********************/
+function getMissingLanes(teamHeroes) {
+  const lanes = ["Exp", "Jungle", "Mid", "Roam", "Gold"];
   const covered = new Set();
 
-  teamPicks.forEach(p => {
-    const hero = heroes.find(h => h.name === p.hero);
+  teamHeroes.forEach(heroName => {
+    const hero = heroes.find(h => h.name === heroName);
     hero?.lanes?.forEach(l => covered.add(l));
   });
 
-  return ALL_LANES.filter(l => !covered.has(l));
+  return lanes.filter(l => !covered.has(l));
 }
 
-/* ================= METATIER SCORING ================= */
-
+/***********************
+ * META SCORING (FLEX-SAFE)
+ ***********************/
 function calculateMetaScore(side) {
   const teamPicks = picks.filter(p => p.side === side);
   const laneBest = {};
-  let score = 0;
 
-  teamPicks.forEach(p => {
-    const hero = heroes.find(h => h.name === p.hero);
-    if (!hero || !hero.metaTier) return;
+  teamPicks.forEach(pick => {
+    const hero = heroes.find(h => h.name === pick.hero);
+    if (!hero) return;
 
     hero.lanes.forEach(lane => {
-      const value =
+      const score =
         hero.metaTier === "S" ? 10 :
         hero.metaTier === "A" ? 8 :
         hero.metaTier === "B" ? 6 :
         hero.metaTier === "Situational" ? 4 : 2;
 
-      laneBest[lane] = Math.max(laneBest[lane] || 0, value);
+      if (!laneBest[lane] || laneBest[lane] < score) {
+        laneBest[lane] = score;
+      }
     });
   });
 
-  Object.values(laneBest).forEach(v => score += v);
-  return score;
+  return Object.values(laneBest).reduce((a, b) => a + b, 0);
 }
 
-/* ================= ANALYSIS ================= */
-
+/***********************
+ * ANALYSIS
+ ***********************/
 function analyzeDraft() {
-  let blueScore = calculateMetaScore("Blue");
-  let redScore = calculateMetaScore("Red");
+  const blueHeroes = picks.filter(p => p.side === "Blue").map(p => p.hero);
+  const redHeroes = picks.filter(p => p.side === "Red").map(p => p.hero);
 
-  const blueMissing = getMissingLanes("Blue");
-  const redMissing = getMissingLanes("Red");
+  const blueMissing = getMissingLanes(blueHeroes);
+  const redMissing = getMissingLanes(redHeroes);
 
-  if (blueMissing.length === 0) blueScore += 10;
-  if (redMissing.length === 0) redScore += 10;
+  const blueScore = calculateMetaScore("Blue");
+  const redScore = calculateMetaScore("Red");
 
   document.getElementById("result").innerText =
-`Blue Team Score: ${blueScore}
-Missing lanes: ${blueMissing.length ? blueMissing.join(", ") : "None"}
-
-Red Team Score: ${redScore}
-Missing lanes: ${redMissing.length ? redMissing.join(", ") : "None"}`;
+    `Blue Score: ${blueScore}\nMissing: ${blueMissing.join(", ") || "None"}\n\n` +
+    `Red Score: ${redScore}\nMissing: ${redMissing.join(", ") || "None"}`;
 }
