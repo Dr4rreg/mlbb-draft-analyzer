@@ -61,7 +61,7 @@ function renderHeroPool() {
 
     btn.appendChild(img);
     btn.appendChild(name);
-    btn.onclick = () => selectHero(hero, btn);
+    btn.onclick = () => selectHero(hero);
 
     grid.appendChild(btn);
   });
@@ -95,8 +95,8 @@ function startTimer(reset = true) {
 }
 
 /* ================= SELECTION ================= */
-function selectHero(hero, btn) {
-  if (btn.classList.contains("locked")) return;
+function selectHero(hero) {
+  if (isHeroLocked(hero.name)) return;
   clearInterval(interval);
   forceSelect(hero);
 }
@@ -152,26 +152,48 @@ function updateTurn() {
   }
 }
 
-/* ================= META TIER ================= */
+/* ================= META ================= */
 function metaTierValue(tier) {
   return { S: 5, A: 4, B: 3, Situational: 2, F: 1 }[tier] || 0;
 }
 
-/* ================= GLOBAL LANE ASSIGNMENT ================= */
-function assignHeroesToLanes(teamPicks) {
-  const lanes = ["Exp", "Jungle", "Mid", "Roam", "Gold"];
-  const remaining = new Set(lanes);
+/* ================= LANE COVERAGE (EXISTENCE-BASED) ================= */
+const ALL_LANES = ["Exp", "Jungle", "Mid", "Roam", "Gold"];
+
+function hasFullLaneCoverage(teamPicks) {
+  const heroObjs = teamPicks.map(p =>
+    heroes.find(h => h.name === p.hero)
+  );
+
+  function backtrack(index, usedLanes) {
+    if (index === heroObjs.length) {
+      return usedLanes.size === 5;
+    }
+
+    const hero = heroObjs[index];
+    for (let lane of hero.lanes) {
+      if (!usedLanes.has(lane)) {
+        usedLanes.add(lane);
+        if (backtrack(index + 1, usedLanes)) return true;
+        usedLanes.delete(lane);
+      }
+    }
+    return false;
+  }
+
+  return backtrack(0, new Set());
+}
+
+/* ================= ASSIGN FOR SCORING ================= */
+function assignForScoring(teamPicks) {
+  const remaining = new Set(ALL_LANES);
   const assignment = {};
 
   const sorted = teamPicks
-    .map(p => ({
-      hero: heroes.find(h => h.name === p.hero),
-      tier: metaTierValue(heroes.find(h => h.name === p.hero)?.metaTier)
-    }))
-    .sort((a, b) => b.tier - a.tier);
+    .map(p => heroes.find(h => h.name === p.hero))
+    .sort((a, b) => metaTierValue(b.metaTier) - metaTierValue(a.metaTier));
 
-  for (let { hero } of sorted) {
-    if (!hero) continue;
+  for (let hero of sorted) {
     const lane = hero.lanes.find(l => remaining.has(l));
     if (lane) {
       assignment[lane] = hero;
@@ -182,12 +204,13 @@ function assignHeroesToLanes(teamPicks) {
   return assignment;
 }
 
-/* ================= SCORING ================= */
+/* ================= TEAM SCORING ================= */
 function scoreTeam(side) {
   const teamPicks = picks.filter(p => p.side === side);
-  const assignment = assignHeroesToLanes(teamPicks);
 
-  const laneCoverage = Object.keys(assignment).length === 5 ? 10 : 0;
+  const laneCoverage = hasFullLaneCoverage(teamPicks) ? 10 : 0;
+
+  const assignment = assignForScoring(teamPicks);
 
   let metaScore = 0;
   let earlyMidSum = 0;
@@ -195,21 +218,22 @@ function scoreTeam(side) {
 
   Object.values(assignment).forEach(hero => {
     metaScore += metaTierValue(hero.metaTier) * 2;
-    earlyMidSum += hero.earlyMid || 0;
-    lateSum += hero.late || 0;
+    earlyMidSum += hero.earlyMid;
+    lateSum += hero.late;
   });
 
-  const count = Object.keys(assignment).length || 1;
-
-  const earlyMid = Math.min(5, earlyMidSum / count);
-  const late = Math.min(5, lateSum / count);
+  const count = Object.values(assignment).length || 1;
 
   return {
     laneCoverage,
     metaScore,
-    earlyMid,
-    late,
-    total: laneCoverage + metaScore + earlyMid + late
+    earlyMid: Math.min(5, earlyMidSum / count),
+    late: Math.min(5, lateSum / count),
+    total:
+      laneCoverage +
+      metaScore +
+      Math.min(5, earlyMidSum / count) +
+      Math.min(5, lateSum / count)
   };
 }
 
