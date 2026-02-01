@@ -33,7 +33,7 @@ const draftOrder = [
   { type: "pick", side: "Red" }             // R5 Pick
 ];
 
-/* Define phases: array of step indexes where timer resets */
+/* Timer reset phases for bans + picks */
 const timerResetPhases = [
   0,1,2,3,4,5,6,7,9,11,12,13,14,15,16,17,19
 ];
@@ -112,13 +112,35 @@ function autoResolve() {
   if (!current) return;
 
   const available = getAvailableHeroes();
-  if (available.length > 0) {
-    forceSelect(randomHero(available), current.type === "pick");
-  }
+  if (available.length === 0) return;
 
-  step++;
-  updateTurn();
-  startTimer(true);
+  if (current.type === "pick") {
+    if (isSimultaneousPick(step)) {
+      if (!simPickPhase) {
+        simPickPhase = true;
+        simPicksRemaining = 2;
+      }
+      forceSelect(randomHero(available), false);
+      simPicksRemaining--;
+
+      if (simPicksRemaining > 0) {
+        startTimer(false);
+      } else {
+        simPickPhase = false;
+        simPicksRemaining = 0;
+        step++;
+        updateTurn();
+        startTimer(true);
+      }
+    } else {
+      forceSelect(randomHero(available));
+    }
+  } else { // ban
+    forceSelect(randomHero(available));
+    step++;
+    updateTurn();
+    startTimer(true);
+  }
 }
 
 function isSimultaneousPick(stepIndex) {
@@ -201,7 +223,7 @@ function updateTurn() {
 
 /* ================= SCORING ================= */
 function assignHeroesToLanes(teamPicks) {
-  const allLanes = ["Exp", "Jungle", "Mid", "Roam", "Gold"];
+  const allLanes = ["Exp","Jungle","Mid","Roam","Gold"];
   const laneAssignment = {};
   const remainingLanes = new Set(allLanes);
 
@@ -217,10 +239,43 @@ function assignHeroesToLanes(teamPicks) {
       laneAssignment[hero.name] = { hero, lane };
       remainingLanes.delete(lane);
     } else {
-      laneAssignment[hero.name] = { hero, lane: hero.lanes[0] };
+      laneAssignment[hero.name] = { hero, lane: hero.lanes[0] }; // fallback
     }
   }
   return laneAssignment;
+}
+
+/* Maximum MetaTier points respecting lane conflicts */
+function calculateMaxMetaTier(teamPicks) {
+  let maxScore = 0;
+  const allLanes = ["Exp","Jungle","Mid","Roam","Gold"];
+
+  function helper(index, assignedLanes, scoreSoFar) {
+    if (index === teamPicks.length) {
+      maxScore = Math.max(maxScore, scoreSoFar);
+      return;
+    }
+
+    const pick = teamPicks[index]; // { hero: "HeroName", lanes: [...] }
+    let added = false;
+
+    for (let lane of pick.lanes) {
+      if (!assignedLanes.has(lane)) {
+        assignedLanes.add(lane);
+        helper(index+1, assignedLanes, scoreSoFar + metaTierValue(pick.hero));
+        assignedLanes.delete(lane);
+        added = true;
+      }
+    }
+
+    if (!added) {
+      // If no lane is free, still add the hero's MetaTier
+      helper(index+1, assignedLanes, scoreSoFar + metaTierValue(pick.hero));
+    }
+  }
+
+  helper(0, new Set(), 0);
+  return maxScore;
 }
 
 function metaTierValue(heroName) {
@@ -236,39 +291,12 @@ function metaTierValue(heroName) {
   }
 }
 
-/* ================= MAXIMIZED METATIER SCORING ================= */
-function calculateMaxMetaTier(teamPicks) {
-  let maxScore = 0;
-  const allLanes = ["Exp","Jungle","Mid","Roam","Gold"];
-
-  function helper(index, assignedLanes, scoreSoFar) {
-    if (index === teamPicks.length) {
-      maxScore = Math.max(maxScore, scoreSoFar);
-      return;
-    }
-
-    const hero = teamPicks[index];
-    for (let lane of hero.lanes) {
-      if (!assignedLanes.has(lane)) {
-        assignedLanes.add(lane);
-        helper(index+1, assignedLanes, scoreSoFar + metaTierValue(hero.hero));
-        assignedLanes.delete(lane);
-      }
-    }
-  }
-
-  helper(0, new Set(), 0);
-  return maxScore;
-}
-
-/* ================= LANE COVERAGE ================= */
 function checkLaneCoverage(teamPicks) {
   const assignment = assignHeroesToLanes(teamPicks);
   const lanesUsed = new Set(Object.values(assignment).map(a => a.lane));
   return lanesUsed.size === 5 ? 10 : 0;
 }
 
-/* ================= EARLY/MID & LATE GAME ================= */
 function calculateEarlyLate(teamPicks) {
   const assignment = assignHeroesToLanes(teamPicks);
   const earlyValues = [];
@@ -294,7 +322,7 @@ window.analyzeDraft = function() {
   const blueLanePoints = checkLaneCoverage(blueTeam);
   const redLanePoints = checkLaneCoverage(redTeam);
 
-  // Maximized MetaTier points
+  // MetaTier points with maximization
   const blueMeta = calculateMaxMetaTier(blueTeam);
   const redMeta = calculateMaxMetaTier(redTeam);
 
