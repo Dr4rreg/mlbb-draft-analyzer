@@ -35,23 +35,7 @@ const draftOrder = [
 
 /* Define phases: array of step indexes where timer resets */
 const timerResetPhases = [
-  0,  // B1 ban
-  1,  // R1 ban
-  2,  // B2 ban
-  3,  // R2 ban
-  4,  // B3 ban
-  5,  // R3 ban
-  6,  // B1 pick
-  7,  // R1+R2 pick phase
-  9,  // B2+B3 pick phase
-  11, // R3 pick
-  12, // R4 ban
-  13, // B4 ban
-  14, // R5 ban
-  15, // B5 ban
-  16, // R4 pick
-  17, // B4+B5 pick
-  19  // R5 pick
+  0,1,2,3,4,5,6,7,9,11,12,13,14,15,16,17,19
 ];
 
 let simPickPhase = false;
@@ -127,38 +111,14 @@ function autoResolve() {
   const current = draftOrder[step];
   if (!current) return;
 
-  if (current.type === "pick") {
-    if (isSimultaneousPick(step)) {
-      if (!simPickPhase) {
-        simPickPhase = true;
-        simPicksRemaining = 2;
-      }
-      const available = getAvailableHeroes();
-      if (available.length > 0) {
-        forceSelect(randomHero(available), false);
-        simPicksRemaining--;
-      }
-
-      if (simPicksRemaining > 0) {
-        startTimer(false);
-      } else {
-        simPickPhase = false;
-        simPicksRemaining = 0;
-        step++;
-        updateTurn();
-        startTimer(true);
-      }
-    } else {
-      const available = getAvailableHeroes();
-      if (available.length > 0) forceSelect(randomHero(available));
-    }
-  } else { // ban
-    const available = getAvailableHeroes();
-    if (available.length > 0) forceSelect(randomHero(available));
-    step++;
-    updateTurn();
-    startTimer(true);
+  const available = getAvailableHeroes();
+  if (available.length > 0) {
+    forceSelect(randomHero(available), current.type === "pick");
   }
+
+  step++;
+  updateTurn();
+  startTimer(true);
 }
 
 function isSimultaneousPick(stepIndex) {
@@ -217,7 +177,6 @@ function addIcon(side, icon, isBan) {
     : isBan ? "redBans" : "redPicks";
 
   document.getElementById(id).appendChild(div);
-
   setTimeout(() => div.classList.add("show"), 10);
 }
 
@@ -258,7 +217,7 @@ function assignHeroesToLanes(teamPicks) {
       laneAssignment[hero.name] = { hero, lane };
       remainingLanes.delete(lane);
     } else {
-      laneAssignment[hero.name] = { hero, lane: hero.lanes[0] }; // fallback
+      laneAssignment[hero.name] = { hero, lane: hero.lanes[0] };
     }
   }
   return laneAssignment;
@@ -277,12 +236,39 @@ function metaTierValue(heroName) {
   }
 }
 
+/* ================= MAXIMIZED METATIER SCORING ================= */
+function calculateMaxMetaTier(teamPicks) {
+  let maxScore = 0;
+  const allLanes = ["Exp","Jungle","Mid","Roam","Gold"];
+
+  function helper(index, assignedLanes, scoreSoFar) {
+    if (index === teamPicks.length) {
+      maxScore = Math.max(maxScore, scoreSoFar);
+      return;
+    }
+
+    const hero = teamPicks[index];
+    for (let lane of hero.lanes) {
+      if (!assignedLanes.has(lane)) {
+        assignedLanes.add(lane);
+        helper(index+1, assignedLanes, scoreSoFar + metaTierValue(hero.hero));
+        assignedLanes.delete(lane);
+      }
+    }
+  }
+
+  helper(0, new Set(), 0);
+  return maxScore;
+}
+
+/* ================= LANE COVERAGE ================= */
 function checkLaneCoverage(teamPicks) {
   const assignment = assignHeroesToLanes(teamPicks);
   const lanesUsed = new Set(Object.values(assignment).map(a => a.lane));
   return lanesUsed.size === 5 ? 10 : 0;
 }
 
+/* ================= EARLY/MID & LATE GAME ================= */
 function calculateEarlyLate(teamPicks) {
   const assignment = assignHeroesToLanes(teamPicks);
   const earlyValues = [];
@@ -308,9 +294,9 @@ window.analyzeDraft = function() {
   const blueLanePoints = checkLaneCoverage(blueTeam);
   const redLanePoints = checkLaneCoverage(redTeam);
 
-  // MetaTier points
-  const blueMeta = blueTeam.reduce((sum,p) => sum + metaTierValue(p.hero),0);
-  const redMeta = redTeam.reduce((sum,p) => sum + metaTierValue(p.hero),0);
+  // Maximized MetaTier points
+  const blueMeta = calculateMaxMetaTier(blueTeam);
+  const redMeta = calculateMaxMetaTier(redTeam);
 
   // Early/Mid & Late
   const blueEL = calculateEarlyLate(blueTeam);
