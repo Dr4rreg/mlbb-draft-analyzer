@@ -95,7 +95,7 @@ const heroes = [
   { name: "Popol and Kupa", roles: ["Marksman"], lanes: ["Gold"], icon: "icons/Popol and Kupa.png", metaTier: "F", earlyMid: 4, late: 3 },
   { name: "Yu Zhong", roles: ["Fighter"], lanes: ["Exp"], icon: "icons/Yu Zhong.png", metaTier: "S", earlyMid: 5, late: 3 },
   { name: "Luo Yi", roles: ["Mage"], lanes: ["Mid"], icon: "icons/Luo Yi.png", metaTier: "Situational", earlyMid: 3, late: 5 },
-  { name: "Benedetta", roles: ["Assassin"], lanes: ["Exp", "Jungle"], icon: "icons/Benedetta.png", metaTier: "Situational", earlyMid: 2, late: 4 },
+  { name: "Benedetta", roles: ["Fighter", "Assassin"], lanes: ["Exp", "Jungle"], icon: "icons/Benedetta.png", metaTier: "Situational", earlyMid: 2, late: 4 },
   { name: "Khaleed", roles: ["Fighter"], lanes: ["Exp", "Roam"], icon: "icons/Khaleed.png", metaTier: "A", earlyMid: 4, late: 3 },
   { name: "Barats", roles: ["Fighter", "Tank"], lanes: ["Exp", "Jungle"], icon: "icons/Barats.png", metaTier: "F", earlyMid: 2, late: 2 },
   { name: "Brody", roles: ["Marksman"], lanes: ["Gold"], icon: "icons/Brody.png", metaTier: "F", earlyMid: 4, late: 3 },
