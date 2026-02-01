@@ -10,28 +10,31 @@ const bans = [];
 /* ================= DRAFT ORDER ================= */
 
 const draftOrder = [
-  { type: "ban", side: "Blue" },
-  { type: "ban", side: "Red" },
-  { type: "ban", side: "Blue" },
-  { type: "ban", side: "Red" },
-  { type: "ban", side: "Blue" },
-  { type: "ban", side: "Red" },
+  // First 6 bans
+  { type: "ban", side: "Blue" }, // B1
+  { type: "ban", side: "Red" },  // R1
+  { type: "ban", side: "Blue" }, // B2
+  { type: "ban", side: "Red" },  // R2
+  { type: "ban", side: "Blue" }, // B3
+  { type: "ban", side: "Red" },  // R3
 
+  // Picks
   { type: "pick", side: "Blue", phase: "B1" },
-
   { type: "pick", side: "Red", phase: "R12" },
   { type: "pick", side: "Red", phase: "R12" },
-
   { type: "pick", side: "Blue", phase: "B23" },
   { type: "pick", side: "Blue", phase: "B23" },
-
   { type: "pick", side: "Red", phase: "R3" },
   { type: "pick", side: "Red", phase: "R4" },
-
   { type: "pick", side: "Blue", phase: "B45" },
   { type: "pick", side: "Blue", phase: "B45" },
+  { type: "pick", side: "Red", phase: "R5" },
 
-  { type: "pick", side: "Red", phase: "R5" }
+  // Remaining 4 bans (B4, R4, B5, R5)
+  { type: "ban", side: "Red" },  // R4
+  { type: "ban", side: "Blue" }, // B4
+  { type: "ban", side: "Red" },  // R5
+  { type: "ban", side: "Blue" }  // B5
 ];
 
 /* ================= INIT ================= */
