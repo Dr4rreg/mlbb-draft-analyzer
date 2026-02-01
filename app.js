@@ -6,31 +6,31 @@ let selectedRole = "All";
 const picks = [];
 const bans = [];
 
-/* MPL ORDER */
+/* ================= DRAFT ORDER (BANS + PICKS PHASES) ================= */
 const draftOrder = [
-  { type: "ban", side: "Blue" },
-  { type: "ban", side: "Red" },
-  { type: "ban", side: "Blue" },
-  { type: "ban", side: "Red" },
-  { type: "ban", side: "Blue" },
-  { type: "ban", side: "Red" },
+  { type: "ban", side: "Blue" }, // B1 Ban
+  { type: "ban", side: "Red" },  // R1 Ban
+  { type: "ban", side: "Blue" }, // B2 Ban
+  { type: "ban", side: "Red" },  // R2 Ban
+  { type: "ban", side: "Blue" }, // B3 Ban
+  { type: "ban", side: "Red" },  // R3 Ban
 
-  { type: "pick", side: "Blue" },       // B1
-  { type: "pick", side: "Red" },        // R1
-  { type: "pick", side: "Red" },        // R2
-  { type: "pick", side: "Blue" },       // B2
-  { type: "pick", side: "Blue" },       // B3
-  { type: "pick", side: "Red" },        // R3
+  { type: "pick", side: "Blue" },       // B1 Pick
+  { type: "pick", side: "Red" },        // R1 Pick
+  { type: "pick", side: "Red" },        // R2 Pick
+  { type: "pick", side: "Blue" },       // B2 Pick
+  { type: "pick", side: "Blue" },       // B3 Pick
+  { type: "pick", side: "Red" },        // R3 Pick
 
-  { type: "ban", side: "Red" },         // R4
-  { type: "ban", side: "Blue" },        // B4
-  { type: "ban", side: "Red" },         // R5
-  { type: "ban", side: "Blue" },        // B5
+  { type: "ban", side: "Red" },         // R4 Ban
+  { type: "ban", side: "Blue" },        // B4 Ban
+  { type: "ban", side: "Red" },         // R5 Ban
+  { type: "ban", side: "Blue" },        // B5 Ban
 
-  { type: "pick", side: "Red" },        // R4
-  { type: "pick", side: "Blue" },       // B4
-  { type: "pick", side: "Blue" },       // B5
-  { type: "pick", side: "Red" }         // R5
+  { type: "pick", side: "Red" },        // R4 Pick
+  { type: "pick", side: "Blue" },       // B4 Pick
+  { type: "pick", side: "Blue" },       // B5 Pick
+  { type: "pick", side: "Red" }         // R5 Pick
 ];
 
 let simPickPhase = false;
@@ -52,7 +52,6 @@ function renderHeroPool() {
 
     const btn = document.createElement("button");
     btn.className = "heroBtn";
-
     if (isHeroLocked(hero.name)) btn.classList.add("locked");
 
     const img = document.createElement("img");
@@ -85,9 +84,8 @@ function matchesRoleFilter(hero) {
 
 /* ================= TIMER ================= */
 function startTimer(reset = true) {
-  if (!reset && simPickPhase) return; // Continue countdown during simultaneous picks
-
   clearInterval(interval);
+
   if (reset) timer = 50;
   document.getElementById("timer").innerText = timer;
 
@@ -107,22 +105,24 @@ function autoResolve() {
   const current = draftOrder[step];
   if (!current) return;
 
+  const available = getAvailableHeroes();
+  if (available.length === 0) {
+    step++;
+    updateTurn();
+    startTimer(true);
+    return;
+  }
+
   if (current.type === "pick") {
     if (isSimultaneousPick(step)) {
       if (!simPickPhase) {
         simPickPhase = true;
         simPicksRemaining = 2;
       }
-      const available = getAvailableHeroes();
-      if (available.length > 0) {
-        forceSelect(randomHero(available), false);
-        simPicksRemaining--;
-      }
-
-      if (simPicksRemaining > 0) {
-        // Do not reset timer yet
-        startTimer(false);
-      } else {
+      forceSelect(randomHero(available), false);
+      simPicksRemaining--;
+      if (simPicksRemaining > 0) startTimer(false);
+      else {
         simPickPhase = false;
         simPicksRemaining = 0;
         step++;
@@ -130,10 +130,8 @@ function autoResolve() {
         startTimer(true);
       }
     } else {
-      const available = getAvailableHeroes();
-      if (available.length > 0) forceSelect(randomHero(available));
+      forceSelect(randomHero(available));
     }
-
   } else {
     addSkippedBan(current.side);
     step++;
@@ -158,13 +156,12 @@ function selectHero(hero, btn) {
 function forceSelect(hero, restartTimer = true) {
   const current = draftOrder[step];
   if (!current) return;
-  const playedLane = hero.lanes[0];
 
   if (current.type === "ban") {
     bans.push({ hero: hero.name, side: current.side });
     addIcon(current.side, hero.icon, true);
   } else {
-    picks.push({ hero: hero.name, side: current.side, lane: playedLane });
+    picks.push({ hero: hero.name, side: current.side });
     addIcon(current.side, hero.icon, false);
   }
 
@@ -194,13 +191,10 @@ function addIcon(side, icon, isBan) {
   img.src = icon;
   div.appendChild(img);
 
-  const id = side === "Blue"
-    ? isBan ? "blueBans" : "bluePicks"
-    : isBan ? "redBans" : "redPicks";
-
+  const id = side === "Blue" ? (isBan ? "blueBans" : "bluePicks") : (isBan ? "redBans" : "redPicks");
   document.getElementById(id).appendChild(div);
 
-  // Trigger fade-in
+  // Fade-in
   setTimeout(() => div.classList.add("show"), 10);
 }
 
@@ -238,65 +232,71 @@ function updateTurn() {
   }
 }
 
-/* ================= LANE ASSIGNMENT ================= */
-function assignHeroesToLanes(teamPicks) {
+/* ================= FLEX-AWARE META TIER ================= */
+function assignOptimalMetaLane(teamPicks) {
+  // Generate all possible lane assignments for flex heroes and pick the one
+  // that maximizes total MetaTier points
   const allLanes = ["Exp", "Jungle", "Mid", "Roam", "Gold"];
-  const laneAssignment = {};
-  const remainingLanes = new Set(allLanes);
+  const assignments = [];
 
-  // Sort heroes by MetaTier descending
-  const sortedPicks = [...teamPicks]
-    .map(p => ({ ...p, tierValue: metaTierValue(p.hero) }))
-    .sort((a, b) => b.tierValue - a.tierValue);
+  function backtrack(index, usedLanes, currentAssign) {
+    if (index === teamPicks.length) {
+      assignments.push({ ...currentAssign });
+      return;
+    }
+    const hero = heroes.find(h => h.name === teamPicks[index].hero);
+    if (!hero) return;
 
-  for (let pick of sortedPicks) {
-    const hero = heroes.find(h => h.name === pick.hero);
-    if (!hero) continue;
-
-    // Assign first available lane from hero's possible lanes
-    const lane = hero.lanes.find(l => remainingLanes.has(l));
-    if (lane) {
-      laneAssignment[hero.name] = { hero, lane };
-      remainingLanes.delete(lane);
-    } else {
-      // Assign anyway to highest-priority lane (will get MetaTier points)
-      laneAssignment[hero.name] = { hero, lane: hero.lanes[0] };
+    for (let lane of hero.lanes) {
+      if (!usedLanes.has(lane)) {
+        usedLanes.add(lane);
+        currentAssign[hero.name] = lane;
+        backtrack(index + 1, usedLanes, currentAssign);
+        usedLanes.delete(lane);
+      }
+    }
+    // If no lanes available, assign anyway to first lane
+    if (!hero.lanes.some(l => !usedLanes.has(l))) {
+      currentAssign[hero.name] = hero.lanes[0];
+      backtrack(index + 1, usedLanes, currentAssign);
     }
   }
 
-  return laneAssignment;
-}
+  backtrack(0, new Set(), {});
 
-function metaTierValue(heroName) {
-  const hero = heroes.find(h => h.name === heroName);
-  if (!hero) return 0;
-  switch (hero.metaTier) {
-    case "S": return 10;
-    case "A": return 8;
-    case "B": return 6;
-    case "Situational": return 4;
-    case "F": return 2;
-    default: return 0;
+  // Pick assignment that maximizes total MetaTier
+  let maxPoints = -1;
+  let bestAssign = null;
+  for (let assign of assignments) {
+    let points = 0;
+    for (let heroName in assign) points += metaTierValue(heroName);
+    if (points > maxPoints) {
+      maxPoints = points;
+      bestAssign = assign;
+    }
   }
+  return bestAssign || {};
 }
 
 /* ================= LANE COVERAGE ================= */
 function checkLaneCoverage(teamPicks) {
-  const assignment = assignHeroesToLanes(teamPicks);
-  const lanesUsed = new Set(Object.values(assignment).map(a => a.lane));
+  const assignment = assignOptimalMetaLane(teamPicks);
+  const lanesUsed = new Set(Object.values(assignment));
   return lanesUsed.size === 5 ? 10 : 0;
 }
 
-/* ================= EARLY/MID & LATE GAME ================= */
+/* ================= EARLY/MID & LATE ================= */
 function calculateEarlyLate(teamPicks) {
-  const assignment = assignHeroesToLanes(teamPicks);
+  const assignment = assignOptimalMetaLane(teamPicks);
   const earlyValues = [];
   const lateValues = [];
 
-  Object.values(assignment).forEach(({ hero }) => {
+  for (let heroName in assignment) {
+    const hero = heroes.find(h => h.name === heroName);
+    if (!hero) continue;
     if (hero.earlyMid !== undefined) earlyValues.push(hero.earlyMid);
     if (hero.late !== undefined) lateValues.push(hero.late);
-  });
+  }
 
   const earlyAvg = earlyValues.length ? Math.min(5, earlyValues.reduce((a,b)=>a+b,0)/earlyValues.length) : 0;
   const lateAvg = lateValues.length ? Math.min(5, lateValues.reduce((a,b)=>a+b,0)/lateValues.length) : 0;
@@ -309,15 +309,18 @@ function analyzeDraft() {
   const blueTeam = picks.filter(p => p.side === "Blue");
   const redTeam = picks.filter(p => p.side === "Red");
 
-  // Lane coverage
   const blueLanePoints = checkLaneCoverage(blueTeam);
   const redLanePoints = checkLaneCoverage(redTeam);
 
-  // MetaTier points
-  const blueMeta = blueTeam.reduce((sum, p) => sum + metaTierValue(p.hero), 0);
-  const redMeta = redTeam.reduce((sum, p) => sum + metaTierValue(p.hero), 0);
+  // Flex-aware MetaTier
+  const blueAssign = assignOptimalMetaLane(blueTeam);
+  const redAssign = assignOptimalMetaLane(redTeam);
 
-  // Early/Mid & Late
+  let blueMeta = 0;
+  for (let hero in blueAssign) blueMeta += metaTierValue(hero);
+  let redMeta = 0;
+  for (let hero in redAssign) redMeta += metaTierValue(hero);
+
   const blueEL = calculateEarlyLate(blueTeam);
   const redEL = calculateEarlyLate(redTeam);
 
