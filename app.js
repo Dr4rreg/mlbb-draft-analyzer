@@ -7,9 +7,6 @@ let selectedRole = "All";
 const picks = [];
 const bans = [];
 
-let simPickPhase = false;
-let simPicksRemaining = 0;
-
 /* MPL ORDER */
 const draftOrder = [
   { type: "ban", side: "Blue" },
@@ -19,28 +16,31 @@ const draftOrder = [
   { type: "ban", side: "Blue" },
   { type: "ban", side: "Red" },
 
-  { type: "pick", side: "Blue" },       // B1
-  { type: "pick", side: "Red" },        // R1
-  { type: "pick", side: "Red" },        // R2
-  { type: "pick", side: "Blue" },       // B2
-  { type: "pick", side: "Blue" },       // B3
-  { type: "pick", side: "Red" },        // R3
+  { type: "pick", side: "Blue" },  // B1
+  { type: "pick", side: "Red" },   // R1
+  { type: "pick", side: "Red" },   // R2
+  { type: "pick", side: "Blue" },  // B2
+  { type: "pick", side: "Blue" },  // B3
+  { type: "pick", side: "Red" },   // R3
 
-  { type: "ban", side: "Red" },         // R4 ban
-  { type: "ban", side: "Blue" },        // B4 ban
-  { type: "ban", side: "Red" },         // R5 ban
-  { type: "ban", side: "Blue" },        // B5 ban
+  { type: "ban", side: "Red" },    // R4 ban
+  { type: "ban", side: "Blue" },   // B4 ban
+  { type: "ban", side: "Red" },    // R5 ban
+  { type: "ban", side: "Blue" },   // B5 ban
 
-  { type: "pick", side: "Red" },        // R4 pick
-  { type: "pick", side: "Blue" },       // B4 pick
-  { type: "pick", side: "Blue" },       // B5 pick
-  { type: "pick", side: "Red" }         // R5 pick
+  { type: "pick", side: "Red" },   // R4 pick
+  { type: "pick", side: "Blue" },  // B4 pick
+  { type: "pick", side: "Blue" },  // B5 pick
+  { type: "pick", side: "Red" }    // R5 pick
 ];
+
+let simPickPhase = false;
+let simPhaseSteps = 0;  // number of picks remaining in this phase
 
 window.onload = () => {
   renderHeroPool();
   updateTurn();
-  startTimer();
+  startTimer(true);
 };
 
 /* ================= HERO POOL ================= */
@@ -115,28 +115,28 @@ function autoResolve() {
     if (isSimultaneousPick(step)) {
       if (!simPickPhase) {
         simPickPhase = true;
-        simPicksRemaining = 2; // total picks in this phase
-        startTimer(true);      // Reset timer at start of phase
+        simPhaseSteps = 2; // total picks in this simultaneous phase
+        startTimer(true);   // reset timer at start of phase
       }
 
       const available = getAvailableHeroes();
       if (available.length > 0) {
-        forceSelect(randomHero(available), false); // do not reset timer
-        simPicksRemaining--;
+        forceSelect(randomHero(available), false); // do not reset timer per pick
+        simPhaseSteps--;
       }
 
-      if (simPicksRemaining === 0) {
+      if (simPhaseSteps === 0) {
         simPickPhase = false;
-        simPicksRemaining = 0;
+        simPhaseSteps = 0;
         step += 2; // skip both picks already done
         updateTurn();
         startTimer(true); // reset timer for next phase
       } else {
-        startTimer(false); // continue countdown
+        startTimer(false); // continue countdown for remaining picks
       }
 
     } else {
-      // Single pick
+      // Single pick phase
       const available = getAvailableHeroes();
       if (available.length > 0) {
         forceSelect(randomHero(available));
@@ -254,26 +254,6 @@ function updateTurn() {
   }
 }
 
-/* ================= LANE COVERAGE ANALYTICS ================= */
-function checkLaneCoverage(teamPicks) {
-  const lanes = ["Exp", "Jungle", "Mid", "Roam", "Gold"];
-  const assigned = new Set();
-
-  for (let heroName of teamPicks) {
-    const hero = heroes.find(h => h.name === heroName);
-    if (!hero || !hero.lanes) continue;
-
-    for (let lane of hero.lanes) {
-      if (!assigned.has(lane)) {
-        assigned.add(lane);
-        break;
-      }
-    }
-  }
-
-  return assigned.size === lanes.length;
-}
-
 /* ================= METATIER SCORING ================= */
 function calculateMetaScore(side) {
   const teamPicks = picks.filter(p => p.side === side);
@@ -300,9 +280,7 @@ function calculateMetaScore(side) {
         case "F": heroScore = 2; break;
       }
 
-      if (heroScore > bestScoreForLane) {
-        bestScoreForLane = heroScore;
-      }
+      if (heroScore > bestScoreForLane) bestScoreForLane = heroScore;
     });
 
     if (bestScoreForLane > 0) laneBestScore[lane] = bestScoreForLane;
@@ -327,14 +305,12 @@ function analyzeDraft() {
   let missingBlueLanes = [];
   let missingRedLanes = [];
 
-  // Lane coverage bonus
   if (checkLaneCoverage(blueHeroes)) blueScore += 10;
   else missingBlueLanes = getMissingLanes(bluePicks);
 
   if (checkLaneCoverage(redHeroes)) redScore += 10;
   else missingRedLanes = getMissingLanes(redPicks);
 
-  // MetaTier scoring
   const blueResult = calculateMetaScore("Blue");
   const redResult = calculateMetaScore("Red");
 
@@ -354,7 +330,6 @@ function analyzeDraft() {
   document.getElementById("result").innerText = output;
 }
 
-/* Helper to get missing lanes */
 function getMissingLanes(teamPicks) {
   const lanes = ["Exp", "Jungle", "Mid", "Roam", "Gold"];
   const assigned = new Set();
