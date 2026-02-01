@@ -6,7 +6,7 @@ let selectedRole = "All";
 const picks = [];
 const bans = [];
 
-/* MPL ORDER */
+/* ================= DRAFT ORDER ================= */
 const draftOrder = [
   { type: "ban", side: "Blue" },
   { type: "ban", side: "Red" },
@@ -33,9 +33,7 @@ const draftOrder = [
   { type: "pick", side: "Red" }
 ];
 
-let simPickPhase = false;
-let simPicksRemaining = 0;
-
+/* ================= INIT ================= */
 window.onload = () => {
   renderHeroPool();
   updateTurn();
@@ -52,7 +50,6 @@ function renderHeroPool() {
 
     const btn = document.createElement("button");
     btn.className = "heroBtn";
-
     if (isHeroLocked(hero.name)) btn.classList.add("locked");
 
     const img = document.createElement("img");
@@ -64,13 +61,13 @@ function renderHeroPool() {
 
     btn.appendChild(img);
     btn.appendChild(name);
-
     btn.onclick = () => selectHero(hero, btn);
+
     grid.appendChild(btn);
   });
 }
 
-/* ================= ROLE FILTER ================= */
+/* ================= FILTER ================= */
 function setRoleFilter(role) {
   selectedRole = role;
   renderHeroPool();
@@ -78,9 +75,7 @@ function setRoleFilter(role) {
 
 function matchesRoleFilter(hero) {
   if (selectedRole === "All") return true;
-  if (hero.role && hero.role === selectedRole) return true;
-  if (hero.roles && hero.roles.includes(selectedRole)) return true;
-  return false;
+  return hero.roles?.includes(selectedRole);
 }
 
 /* ================= TIMER ================= */
@@ -92,57 +87,11 @@ function startTimer(reset = true) {
   interval = setInterval(() => {
     timer--;
     document.getElementById("timer").innerText = timer;
-
     if (timer <= 0) {
       clearInterval(interval);
       autoResolve();
     }
   }, 1000);
-}
-
-/* ================= AUTO RESOLVE ================= */
-function autoResolve() {
-  const current = draftOrder[step];
-  if (!current) return;
-
-  if (current.type === "pick") {
-    if (isSimultaneousPick(step)) {
-      if (!simPickPhase) {
-        simPickPhase = true;
-        simPicksRemaining = 2;
-      }
-      const available = getAvailableHeroes();
-      if (available.length > 0) {
-        forceSelect(randomHero(available), false);
-        simPicksRemaining--;
-      }
-
-      if (simPicksRemaining > 0) {
-        startTimer(false);
-      } else {
-        simPickPhase = false;
-        simPicksRemaining = 0;
-        step++;
-        updateTurn();
-        startTimer(true);
-      }
-    } else {
-      const available = getAvailableHeroes();
-      if (available.length > 0) forceSelect(randomHero(available));
-    }
-
-  } else {
-    addSkippedBan(current.side);
-    step++;
-    updateTurn();
-    startTimer(true);
-  }
-}
-
-function isSimultaneousPick(stepIndex) {
-  const cur = draftOrder[stepIndex];
-  const next = draftOrder[stepIndex + 1];
-  return cur && next && cur.type === "pick" && next.type === "pick" && cur.side === next.side;
 }
 
 /* ================= SELECTION ================= */
@@ -152,7 +101,7 @@ function selectHero(hero, btn) {
   forceSelect(hero);
 }
 
-function forceSelect(hero, restartTimer = true) {
+function forceSelect(hero) {
   const current = draftOrder[step];
   if (!current) return;
 
@@ -164,23 +113,15 @@ function forceSelect(hero, restartTimer = true) {
     addIcon(current.side, hero.icon, false);
   }
 
-  if (!simPickPhase || simPicksRemaining === 0) step++;
+  step++;
   updateTurn();
-  if (restartTimer && !simPickPhase) startTimer(true);
+  startTimer(true);
   renderHeroPool();
 }
 
 /* ================= HELPERS ================= */
-function getAvailableHeroes() {
-  return heroes.filter(h => !isHeroLocked(h.name));
-}
-
 function isHeroLocked(name) {
   return picks.some(p => p.hero === name) || bans.some(b => b.hero === name);
-}
-
-function randomHero(list) {
-  return list[Math.floor(Math.random() * list.length)];
 }
 
 function addIcon(side, icon, isBan) {
@@ -197,162 +138,99 @@ function addIcon(side, icon, isBan) {
   document.getElementById(id).appendChild(div);
 }
 
-function addSkippedBan(side) {
-  const div = document.createElement("div");
-  div.className = "banIcon skipped";
-  const id = side === "Blue" ? "blueBans" : "redBans";
-  document.getElementById(id).appendChild(div);
-}
-
-/* ================= TURN ================= */
 function updateTurn() {
-  if (
-    picks.filter(p => p.side === "Blue").length === 5 &&
-    picks.filter(p => p.side === "Red").length === 5 &&
-    bans.filter(b => b.side === "Blue").length === 5 &&
-    bans.filter(b => b.side === "Red").length === 5
-  ) {
+  if (picks.length === 10 && bans.length === 10) {
     document.getElementById("turnIndicator").innerText = "Draft Complete!";
     document.getElementById("analyzeBtn").disabled = false;
     clearInterval(interval);
     return;
   }
-
   const c = draftOrder[step];
   if (c) {
     document.getElementById("turnIndicator").innerText =
-      `${c.side} Team — ${c.type.toUpperCase()}`;
+      `${c.side} — ${c.type.toUpperCase()}`;
   }
 }
 
-/* ================= LANE ASSIGNMENT WITH META PRIORITY ================= */
+/* ================= META TIER ================= */
+function metaTierValue(tier) {
+  return { S: 5, A: 4, B: 3, Situational: 2, F: 1 }[tier] || 0;
+}
+
+/* ================= GLOBAL LANE ASSIGNMENT ================= */
 function assignHeroesToLanes(teamPicks) {
-  const allLanes = ["Exp", "Jungle", "Mid", "Roam", "Gold"];
-  const laneAssignment = {};
-  const remainingLanes = new Set(allLanes);
+  const lanes = ["Exp", "Jungle", "Mid", "Roam", "Gold"];
+  const remaining = new Set(lanes);
+  const assignment = {};
 
-  // Sort heroes by MetaTier descending
-  const sortedPicks = teamPicks
-    .map(p => ({ ...p, tierValue: metaTierValue(p.hero) }))
-    .sort((a, b) => b.tierValue - a.tierValue);
+  const sorted = teamPicks
+    .map(p => ({
+      hero: heroes.find(h => h.name === p.hero),
+      tier: metaTierValue(heroes.find(h => h.name === p.hero)?.metaTier)
+    }))
+    .sort((a, b) => b.tier - a.tier);
 
-  for (let pick of sortedPicks) {
-    const hero = heroes.find(h => h.name === pick.hero);
+  for (let { hero } of sorted) {
     if (!hero) continue;
-
-    // Assign hero to the first available lane that maximizes coverage
-    let assigned = false;
-    for (let l of hero.lanes) {
-      if (remainingLanes.has(l)) {
-        laneAssignment[l] = hero;
-        remainingLanes.delete(l);
-        assigned = true;
-        break;
-      }
-    }
-
-    // If no lane available, assign to hero's primary lane anyway
-    if (!assigned && hero.lanes.length > 0) {
-      laneAssignment[hero.lanes[0]] = hero;
+    const lane = hero.lanes.find(l => remaining.has(l));
+    if (lane) {
+      assignment[lane] = hero;
+      remaining.delete(lane);
     }
   }
 
-  return laneAssignment;
+  return assignment;
 }
 
-function metaTierValue(heroName) {
-  const hero = heroes.find(h => h.name === heroName);
-  if (!hero) return 0;
-  switch (hero.metaTier) {
-    case "S": return 5;
-    case "A": return 4;
-    case "B": return 3;
-    case "Situational": return 2;
-    case "F": return 1;
-    default: return 0;
-  }
-}
-
-/* ================= LANE COVERAGE ================= */
-function checkLaneCoverage(teamPicks) {
-  const assignment = assignHeroesToLanes(teamPicks);
-  return Object.keys(assignment).length === 5;
-}
-
-/* ================= METATIER SCORING ================= */
-function calculateMetaScore(side) {
+/* ================= SCORING ================= */
+function scoreTeam(side) {
   const teamPicks = picks.filter(p => p.side === side);
   const assignment = assignHeroesToLanes(teamPicks);
 
-  let score = 0;
+  const laneCoverage = Object.keys(assignment).length === 5 ? 10 : 0;
 
-  Object.values(assignment).forEach(hero => {
-    switch (hero.metaTier) {
-      case "S": score += 10; break;
-      case "A": score += 8; break;
-      case "B": score += 6; break;
-      case "Situational": score += 4; break;
-      case "F": score += 2; break;
-    }
-  });
-
-  return score;
-}
-
-/* ================= EARLY/MID AND LATE ================= */
-function calculateEarlyLate(side) {
-  const teamPicks = picks.filter(p => p.side === side);
-  const assignment = assignHeroesToLanes(teamPicks);
-
-  const assignedHeroes = Object.values(assignment);
-  const count = assignedHeroes.length;
-
-  let earlySum = 0;
+  let metaScore = 0;
+  let earlyMidSum = 0;
   let lateSum = 0;
 
-  assignedHeroes.forEach(hero => {
-    earlySum += hero.earlyMid || 0;
+  Object.values(assignment).forEach(hero => {
+    metaScore += metaTierValue(hero.metaTier) * 2;
+    earlyMidSum += hero.earlyMid || 0;
     lateSum += hero.late || 0;
   });
 
-  // Scale to max 5 points
-  const earlyScore = count ? Math.min(5, earlySum / count) : 0;
-  const lateScore = count ? Math.min(5, lateSum / count) : 0;
+  const count = Object.keys(assignment).length || 1;
 
-  return { early: earlyScore, late: lateScore };
+  const earlyMid = Math.min(5, earlyMidSum / count);
+  const late = Math.min(5, lateSum / count);
+
+  return {
+    laneCoverage,
+    metaScore,
+    earlyMid,
+    late,
+    total: laneCoverage + metaScore + earlyMid + late
+  };
 }
 
 /* ================= ANALYSIS ================= */
 function analyzeDraft() {
-  const blueHeroes = picks.filter(p => p.side === "Blue");
-  const redHeroes = picks.filter(p => p.side === "Red");
+  const blue = scoreTeam("Blue");
+  const red = scoreTeam("Red");
 
-  // Lane Coverage
-  const blueLane = checkLaneCoverage(blueHeroes) ? 10 : 0;
-  const redLane = checkLaneCoverage(redHeroes) ? 10 : 0;
+  document.getElementById("result").innerText = `
+BLUE TEAM
+Lane Coverage: ${blue.laneCoverage}
+Meta Tier: ${blue.metaScore}
+Early/Mid: ${blue.earlyMid.toFixed(1)}
+Late: ${blue.late.toFixed(1)}
+TOTAL: ${blue.total.toFixed(1)}
 
-  // MetaTier
-  const blueMeta = calculateMetaScore("Blue");
-  const redMeta = calculateMetaScore("Red");
-
-  // Early/Late
-  const blueEL = calculateEarlyLate("Blue");
-  const redEL = calculateEarlyLate("Red");
-
-  const blueScore = blueLane + blueMeta + blueEL.early + blueEL.late;
-  const redScore = redLane + redMeta + redEL.early + redEL.late;
-
-  document.getElementById("result").innerText =
-    `Blue Team:\n` +
-    `- Lane Coverage: ${blueLane} pts\n` +
-    `- MetaTier: ${blueMeta} pts\n` +
-    `- Early/Mid: ${blueEL.early.toFixed(1)} pts\n` +
-    `- Late: ${blueEL.late.toFixed(1)} pts\n` +
-    `Total: ${blueScore.toFixed(1)} pts\n\n` +
-    `Red Team:\n` +
-    `- Lane Coverage: ${redLane} pts\n` +
-    `- MetaTier: ${redMeta} pts\n` +
-    `- Early/Mid: ${redEL.early.toFixed(1)} pts\n` +
-    `- Late: ${redEL.late.toFixed(1)} pts\n` +
-    `Total: ${redScore.toFixed(1)} pts`;
+RED TEAM
+Lane Coverage: ${red.laneCoverage}
+Meta Tier: ${red.metaScore}
+Early/Mid: ${red.earlyMid.toFixed(1)}
+Late: ${red.late.toFixed(1)}
+TOTAL: ${red.total.toFixed(1)}
+`;
 }
