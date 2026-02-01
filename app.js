@@ -6,49 +6,48 @@ let selectedRole = "All";
 const picks = [];
 const bans = [];
 
-/* ================= DRAFT ORDER ================= */
+/* ================= MPL ORDER PHASES ================= */
 const draftOrder = [
-  // Phase 1: Bans
-  { type: "ban", side: "Blue" },  // B1 Ban
-  { type: "ban", side: "Red" },   // R1 Ban
-  { type: "ban", side: "Blue" },  // B2 Ban
-  { type: "ban", side: "Red" },   // R2 Ban
-  { type: "ban", side: "Blue" },  // B3 Ban
-  { type: "ban", side: "Red" },   // R3 Ban
-
-  // Phase 2: Picks
-  { type: "pick", side: "Blue" },       // B1 Pick
-  { type: "pick", side: "Red" },        // R1 Pick
-  { type: "pick", side: "Red" },        // R2 Pick
-  { type: "pick", side: "Blue" },       // B2 Pick
-  { type: "pick", side: "Blue" },       // B3 Pick
-  { type: "pick", side: "Red" },        // R3 Pick
-
-  // Phase 3: Bans
-  { type: "ban", side: "Red" },         // R4 Ban
-  { type: "ban", side: "Blue" },        // B4 Ban
-  { type: "ban", side: "Red" },         // R5 Ban
-  { type: "ban", side: "Blue" },        // B5 Ban
-
-  // Phase 4: Picks
-  { type: "pick", side: "Red" },        // R4 Pick
-  { type: "pick", side: "Blue" },       // B4 Pick
-  { type: "pick", side: "Blue" },       // B5 Pick
-  { type: "pick", side: "Red" }         // R5 Pick
+  { type: "ban", side: "Blue" },      // B1 Ban
+  { type: "ban", side: "Red" },       // R1 Ban
+  { type: "ban", side: "Blue" },      // B2 Ban
+  { type: "ban", side: "Red" },       // R2 Ban
+  { type: "ban", side: "Blue" },      // B3 Ban
+  { type: "ban", side: "Red" },       // R3 Ban
+  { type: "pick", side: "Blue" },     // B1 Pick
+  { type: "pick", side: "Red" },      // R1+R2 Pick Phase Start
+  { type: "pick", side: "Red" },
+  { type: "pick", side: "Blue" },     // B2+B3 Pick Phase Start
+  { type: "pick", side: "Blue" },
+  { type: "pick", side: "Red" },      // R3 Pick
+  { type: "ban", side: "Red" },       // R4 Ban
+  { type: "ban", side: "Blue" },      // B4 Ban
+  { type: "ban", side: "Red" },       // R5 Ban
+  { type: "ban", side: "Blue" },      // B5 Ban
+  { type: "pick", side: "Red" },      // R4 Pick
+  { type: "pick", side: "Blue" },     // B4+B5 Pick
+  { type: "pick", side: "Blue" },
+  { type: "pick", side: "Red" }       // R5 Pick
 ];
 
-/* Define phases (indexes of first action in each phase) */
+/* ================= PHASE LOGIC ================= */
 const phases = [
-  0, 6, 12, 16 // start index of each phase
+  { start: 0, end: 5 },   // Ban Phase 1
+  { start: 6, end: 6 },   // B1 Pick
+  { start: 7, end: 8 },   // R1+R2 Pick
+  { start: 9, end: 10 },  // B2+B3 Pick
+  { start: 11, end: 11 }, // R3 Pick
+  { start: 12, end: 15 }, // Ban Phase 2
+  { start: 16, end: 16 }, // R4 Pick
+  { start: 17, end: 18 }, // B4+B5 Pick
+  { start: 19, end: 19 }  // R5 Pick
 ];
 
-let simPickPhase = false;
-let simPicksRemaining = 0;
-
+/* ================= INITIALIZATION ================= */
 window.onload = () => {
   renderHeroPool();
   updateTurn();
-  startTimer();
+  startTimer(true);
 };
 
 /* ================= HERO POOL ================= */
@@ -61,7 +60,6 @@ function renderHeroPool() {
 
     const btn = document.createElement("button");
     btn.className = "heroBtn";
-
     if (isHeroLocked(hero.name)) btn.classList.add("locked");
 
     const img = document.createElement("img");
@@ -79,12 +77,6 @@ function renderHeroPool() {
   });
 }
 
-/* ================= ROLE FILTER ================= */
-function setRoleFilter(role) {
-  selectedRole = role;
-  renderHeroPool();
-}
-
 function matchesRoleFilter(hero) {
   if (selectedRole === "All") return true;
   if (hero.role && hero.role === selectedRole) return true;
@@ -92,10 +84,18 @@ function matchesRoleFilter(hero) {
   return false;
 }
 
+function setRoleFilter(role) {
+  selectedRole = role;
+  renderHeroPool();
+}
+
 /* ================= TIMER ================= */
-function startTimer(reset = true) {
+function startTimer(reset = false) {
   clearInterval(interval);
-  if (reset) timer = 50;
+
+  // Reset timer if this step is start of a phase
+  if (reset || isPhaseStart(step)) timer = 50;
+
   document.getElementById("timer").innerText = timer;
 
   interval = setInterval(() => {
@@ -109,40 +109,26 @@ function startTimer(reset = true) {
   }, 1000);
 }
 
+function isPhaseStart(index) {
+  return phases.some(p => p.start === index);
+}
+
 /* ================= AUTO RESOLVE ================= */
 function autoResolve() {
   const current = draftOrder[step];
   if (!current) return;
 
-  const phaseStart = getCurrentPhaseStart(step);
-
-  // Reset timer if moving to new phase
-  if (step === phaseStart) timer = 50;
-
   const available = getAvailableHeroes();
 
   if (current.type === "pick") {
-    forceSelect(randomHero(available));
+    if (available.length > 0) forceSelect(randomHero(available));
   } else {
-    addSkippedBan(current.side);
-    bans.push({ hero: "Skipped", side: current.side });
+    // Ban automatically
+    if (available.length > 0) addSkippedBan(current.side);
+    step++;
+    updateTurn();
+    startTimer(true);
   }
-
-  step++;
-  updateTurn();
-  startTimer(step === phaseStart); // reset only at new phase
-}
-
-/* Determine start index of current phase */
-function getCurrentPhaseStart(index) {
-  let start = phases[0];
-  for (let i = phases.length - 1; i >= 0; i--) {
-    if (index >= phases[i]) {
-      start = phases[i];
-      break;
-    }
-  }
-  return start;
 }
 
 /* ================= SELECTION ================= */
@@ -152,7 +138,7 @@ function selectHero(hero, btn) {
   forceSelect(hero);
 }
 
-function forceSelect(hero, restartTimer = true) {
+function forceSelect(hero) {
   const current = draftOrder[step];
   if (!current) return;
   const playedLane = hero.lanes[0];
@@ -168,7 +154,9 @@ function forceSelect(hero, restartTimer = true) {
   step++;
   updateTurn();
   renderHeroPool();
-  startTimer(restartTimer);
+
+  // Timer: reset if next step is phase start
+  startTimer(isPhaseStart(step));
 }
 
 /* ================= HELPERS ================= */
@@ -177,13 +165,14 @@ function getAvailableHeroes() {
 }
 
 function isHeroLocked(name) {
-  return picks.some(p => p.hero === name) || bans.some(b => p.hero === name);
+  return picks.some(p => p.hero === name) || bans.some(b => b.hero === name);
 }
 
 function randomHero(list) {
   return list[Math.floor(Math.random() * list.length)];
 }
 
+/* ================= ICON ADDITION ================= */
 function addIcon(side, icon, isBan) {
   const div = document.createElement("div");
   div.className = isBan ? "banIcon" : "pickIcon";
@@ -198,9 +187,7 @@ function addIcon(side, icon, isBan) {
     : isBan ? "redBans" : "redPicks";
 
   document.getElementById(id).appendChild(div);
-
-  // Fade in
-  setTimeout(() => { div.style.opacity = 1; }, 50);
+  setTimeout(() => div.style.opacity = 1, 10);
 }
 
 function addSkippedBan(side) {
@@ -212,7 +199,7 @@ function addSkippedBan(side) {
   const id = side === "Blue" ? "blueBans" : "redBans";
   document.getElementById(id).appendChild(div);
 
-  setTimeout(() => { div.style.opacity = 1; }, 50);
+  setTimeout(() => div.style.opacity = 1, 10);
 }
 
 /* ================= TURN ================= */
@@ -222,9 +209,7 @@ function updateTurn() {
   const blueBans = bans.filter(b => b.side === "Blue").length;
   const redBans = bans.filter(b => b.side === "Red").length;
 
-  const draftComplete = bluePicks === 5 && redPicks === 5 && blueBans === 5 && redBans === 5;
-
-  if (draftComplete) {
+  if (bluePicks === 5 && redPicks === 5 && blueBans === 5 && redBans === 5) {
     document.getElementById("turnIndicator").innerText = "Draft Complete!";
     document.getElementById("analyzeBtn").disabled = false;
     clearInterval(interval);
@@ -236,27 +221,6 @@ function updateTurn() {
     document.getElementById("turnIndicator").innerText =
       `${c.side} Team — ${c.type.toUpperCase()}`;
   }
-}
-
-/* ================= ANALYSIS (FULL BREAKDOWN) ================= */
-function analyzeDraft() {
-  const sides = ["Blue", "Red"];
-  const resultText = sides.map(side => {
-    const teamPicks = picks.filter(p => p.side === side);
-    const laneCoverage = checkLaneCoverage(teamPicks) ? 10 : 0;
-    const meta = calculateMetaScore(side);
-    const earlyLate = calculateEarlyLate(side);
-    const total = laneCoverage + meta + earlyLate.earlyMid + earlyLate.late;
-
-    return `${side} Team Score Breakdown:
-Lane Coverage: ${laneCoverage}
-MetaTier: ${meta}
-Early/Mid: ${earlyLate.earlyMid.toFixed(1)}
-Late: ${earlyLate.late.toFixed(1)}
-Total: ${total.toFixed(1)}\n`;
-  }).join("\n");
-
-  document.getElementById("result").innerText = resultText;
 }
 
 /* ================= LANE ASSIGNMENT ================= */
@@ -274,7 +238,7 @@ function assignHeroesToLanes(teamPicks) {
     const hero = heroes.find(h => h.name === pick.hero);
     if (!hero) continue;
 
-    // Find first available lane from hero's possible lanes
+    // Assign hero to first available lane
     const lane = hero.lanes.find(l => remainingLanes.has(l));
     if (lane) {
       laneAssignment[lane] = hero;
@@ -298,48 +262,58 @@ function metaTierValue(heroName) {
   }
 }
 
-/* ================= LANE COVERAGE ================= */
-function checkLaneCoverage(teamPicks) {
-  const assignment = assignHeroesToLanes(teamPicks);
-  return Object.keys(assignment).length === 5;
-}
+/* ================= DRAFT ANALYSIS ================= */
+function analyzeDraft() {
+  const blueHeroes = picks.filter(p => p.side === "Blue");
+  const redHeroes = picks.filter(p => p.side === "Red");
 
-/* ================= METATIER SCORING ================= */
-function calculateMetaScore(side) {
-  const teamPicks = picks.filter(p => p.side === side);
-  const assignment = assignHeroesToLanes(teamPicks);
+  const results = ["Blue Team", "Red Team"].map((teamName, i) => {
+    const side = i === 0 ? "Blue" : "Red";
+    const teamPicks = side === "Blue" ? blueHeroes : redHeroes;
+    const assignment = assignHeroesToLanes(teamPicks);
 
-  let score = 0;
-  Object.values(assignment).forEach(hero => {
-    switch (hero.metaTier) {
-      case "S": score += 10; break;
-      case "A": score += 8; break;
-      case "B": score += 6; break;
-      case "Situational": score += 4; break;
-      case "F": score += 2; break;
-    }
+    const laneScore = Object.keys(assignment).length === 5 ? 10 : 0;
+
+    let metaScore = 0;
+    let earlyMidTotal = 0;
+    let lateTotal = 0;
+
+    Object.values(assignment).forEach(hero => {
+      metaScore += metaTierPoints(hero.metaTier);
+      earlyMidTotal += hero.earlyMid || 0;
+      lateTotal += hero.late || 0;
+    });
+
+    const count = Object.values(assignment).length || 1;
+    const earlyMid = Math.min(5, earlyMidTotal / count);
+    const late = Math.min(5, lateTotal / count);
+
+    const total = laneScore + metaScore + earlyMid + late;
+
+    return {
+      team: teamName,
+      laneScore,
+      metaScore,
+      earlyMid: earlyMid.toFixed(1),
+      late: late.toFixed(1),
+      total: total.toFixed(1)
+    };
   });
 
-  return score;
+  document.getElementById("result").innerText =
+    `${results[0].team}:\n` +
+    `Lane Coverage: ${results[0].laneScore}\nMetaTier: ${results[0].metaScore}\nEarly/Mid: ${results[0].earlyMid}\nLate: ${results[0].late}\nTotal: ${results[0].total}\n\n` +
+    `${results[1].team}:\n` +
+    `Lane Coverage: ${results[1].laneScore}\nMetaTier: ${results[1].metaScore}\nEarly/Mid: ${results[1].earlyMid}\nLate: ${results[1].late}\nTotal: ${results[1].total}`;
 }
 
-/* ================= EARLY/MID AND LATE ================= */
-function calculateEarlyLate(side) {
-  const teamPicks = picks.filter(p => p.side === side);
-  const assignment = assignHeroesToLanes(teamPicks);
-
-  let earlyMidScore = 0;
-  let lateScore = 0;
-  const heroesCount = Object.values(assignment).length;
-
-  Object.values(assignment).forEach(hero => {
-    earlyMidScore += hero.earlyMid || 0;
-    lateScore += hero.late || 0;
-  });
-
-  // Cap at 5 points max
-  const early = heroesCount ? Math.min(5, earlyMidScore / heroesCount) : 0;
-  const late = heroesCount ? Math.min(5, lateScore / heroesCount) : 0;
-
-  return { earlyMid: early, late: late };
+function metaTierPoints(tier) {
+  switch (tier) {
+    case "S": return 10;
+    case "A": return 8;
+    case "B": return 6;
+    case "Situational": return 4;
+    case "F": return 2;
+    default: return 0;
+  }
 }
