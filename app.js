@@ -35,7 +35,7 @@ const draftOrder = [
 ];
 
 /* ================= PHASES ================= */
-// Each phase is a contiguous set of steps that share a single timer
+// Group contiguous steps for timer logic (bans or picks)
 const phases = [
   [0], [1], [2], [3], [4], [5],       // Bans
   [6],                                // B1 Pick
@@ -52,7 +52,7 @@ const phases = [
 window.onload = () => {
   renderHeroPool();
   updateTurn();
-  startTimer(true);
+  startPhaseTimer();
 };
 
 /* ================= HERO POOL ================= */
@@ -83,7 +83,6 @@ function renderHeroPool() {
   });
 }
 
-/* ================= ROLE FILTER ================= */
 function setRoleFilter(role) {
   selectedRole = role;
   renderHeroPool();
@@ -97,9 +96,9 @@ function matchesRoleFilter(hero) {
 }
 
 /* ================= TIMER ================= */
-function startTimer(reset = false) {
+function startPhaseTimer() {
   clearInterval(interval);
-  if (reset) timer = 50;
+  timer = 50;
   document.getElementById("timer").innerText = timer;
 
   interval = setInterval(() => {
@@ -108,7 +107,7 @@ function startTimer(reset = false) {
 
     if (timer <= 0) {
       clearInterval(interval);
-      autoResolvePhase();
+      autoPickPhase();
     }
   }, 1000);
 }
@@ -122,8 +121,8 @@ function isLastStepInPhase() {
   return step >= Math.max(...phase);
 }
 
-/* ================= AUTO-RESOLVE ================= */
-function autoResolvePhase() {
+/* ================= AUTO PICK ================= */
+function autoPickPhase() {
   const phase = currentPhase();
   for (let i = step; i <= Math.max(...phase); i++) {
     const current = draftOrder[i];
@@ -139,11 +138,11 @@ function autoResolvePhase() {
     }
   }
 
-  // Move to next phase
+  // Advance to next phase
   phaseIndex++;
   if (phaseIndex < phases.length) {
     step = Math.min(...phases[phaseIndex]);
-    startTimer(true);
+    startPhaseTimer();
   }
 }
 
@@ -168,11 +167,12 @@ function forceSelect(hero, restartTimer = true) {
 
   step++;
 
+  // Only reset timer at start of next phase
   if (isLastStepInPhase()) {
     phaseIndex++;
-    if (phaseIndex < phases.length && restartTimer) startTimer(true);
+    if (phaseIndex < phases.length && restartTimer) startPhaseTimer();
   } else {
-    if (restartTimer) startTimer(false);
+    if (restartTimer) document.getElementById("timer").innerText = timer; // continue
   }
 
   updateTurn();
@@ -207,10 +207,7 @@ function addIcon(side, icon, isBan) {
 
   document.getElementById(id).appendChild(div);
 
-  // Fade in
-  requestAnimationFrame(() => {
-    div.style.opacity = 1;
-  });
+  requestAnimationFrame(() => { div.style.opacity = 1; });
 }
 
 function addSkippedBan(side) {
@@ -255,14 +252,12 @@ function assignHeroesToLanes(teamPicks) {
     const hero = heroes.find(h => h.name === pick.hero);
     if (!hero) continue;
 
-    // Assign to first available lane hero can go to
     const lane = hero.lanes.find(l => remainingLanes.has(l));
     if (lane) {
       laneAssignment[lane] = hero;
       remainingLanes.delete(lane);
     }
   }
-
   return laneAssignment;
 }
 
@@ -283,11 +278,8 @@ function calculateLaneCoverage(side) {
   const teamPicks = picks.filter(p => p.side === side);
   const lanesList = teamPicks.map(p => heroes.find(h => h.name === p.hero).lanes);
 
-  // Check if any combination of lanes fills all 5 lanes
   function fillLanes(assigned = {}, index = 0) {
-    if (index >= lanesList.length) {
-      return Object.keys(assigned).length === 5;
-    }
+    if (index >= lanesList.length) return Object.keys(assigned).length === 5;
     for (let l of lanesList[index]) {
       if (!assigned[l]) {
         assigned[l] = true;
@@ -303,14 +295,11 @@ function calculateLaneCoverage(side) {
 function calculateMetaScore(side) {
   const teamPicks = picks.filter(p => p.side === side);
   let score = 0;
-
   teamPicks.forEach(pick => {
     const hero = heroes.find(h => h.name === pick.hero);
     if (!hero) return;
-
     score += metaTierValue(hero.name);
   });
-
   return score;
 }
 
