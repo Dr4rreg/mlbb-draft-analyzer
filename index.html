@@ -1,67 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>MLBB Draft Simulator</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ML Draft Simulator</title>
+<style>
+  body { font-family: sans-serif; padding: 20px; }
+  #heroGrid { display: grid; grid-template-columns: repeat(6, 100px); gap: 10px; margin-bottom: 20px; }
+  .heroBtn { display: flex; flex-direction: column; align-items: center; cursor: pointer; border: 1px solid #ccc; padding: 5px; }
+  .heroBtn.locked { opacity: 0.4; pointer-events: none; }
+  .heroName { font-size: 12px; text-align: center; margin-top: 5px; }
+  #timer, #turnIndicator, #result { margin: 10px 0; font-weight: bold; }
+  .pickIcon, .banIcon { display: inline-block; margin: 2px; width: 50px; height: 50px; }
+  .pickIcon img, .banIcon img { width: 100%; height: 100%; }
+  .banIcon.skipped { background: #ccc; }
+</style>
 </head>
 <body>
 
-  <h1>MLBB Draft Simulator</h1>
+<h1>ML Draft Simulator</h1>
 
-  <!-- TURN + TIMER -->
-  <div id="turnIndicator">Loading…</div>
-  <div id="timer">50</div>
+<div id="turnIndicator">Loading...</div>
+<div>Timer: <span id="timer">50</span>s</div>
 
-  <!-- DRAFT UI -->
-  <div id="draftUI">
-    <!-- BANS -->
-    <div class="draftRow">
-      <div class="side blue">
-        <div class="banRow" id="blueBans"></div>
-      </div>
-      <div class="side red">
-        <div class="banRow reverse" id="redBans"></div>
-      </div>
-    </div>
+<div id="heroGrid"></div>
 
-    <!-- PICKS -->
-    <div class="draftRow">
-      <div class="side blue">
-        <div class="pickRow" id="bluePicks"></div>
-      </div>
-      <div class="side red">
-        <div class="pickRow reverse" id="redPicks"></div>
-      </div>
-    </div>
-  </div>
+<h2>Blue Team</h2>
+<div>Picks: <span id="bluePicks"></span></div>
+<div>Bans: <span id="blueBans"></span></div>
 
-<!-- ROLE FILTER -->
-<div id="roleFilter">
-  <button class="roleBtn" onclick="setRoleFilter('All')">All</button>
-  <button class="roleBtn" onclick="setRoleFilter('Tank')">Tank</button>
-  <button class="roleBtn" onclick="setRoleFilter('Fighter')">Fighter</button>
-  <button class="roleBtn" onclick="setRoleFilter('Assassin')">Assassin</button>
-  <button class="roleBtn" onclick="setRoleFilter('Mage')">Mage</button>
-  <button class="roleBtn" onclick="setRoleFilter('Marksman')">Marksman</button>
-  <button class="roleBtn" onclick="setRoleFilter('Support')">Support</button>
-</div>
-  
-  <!-- HERO POOL -->
-  <div id="heroGrid"></div>
+<h2>Red Team</h2>
+<div>Picks: <span id="redPicks"></span></div>
+<div>Bans: <span id="redBans"></span></div>
 
-  <!-- ANALYZE -->
-  <div class="center">
-    <button id="analyzeBtn" onclick="analyzeDraft()" disabled>
-      Analyze Draft
-    </button>
-  </div>
+<button id="analyzeBtn" onclick="analyzeDraft()" disabled>Analyze Draft</button>
 
-  <div id="result"></div>
+<div id="result"></div>
 
-  <script src="heroes.js"></script>
-  <script src="app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
