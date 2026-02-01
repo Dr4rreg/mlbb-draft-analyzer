@@ -8,36 +8,39 @@ const picks = [];
 const bans = [];
 
 /* ================= DRAFT ORDER ================= */
-
+/* MPL-style draft with corrected bans and picks */
 const draftOrder = [
-  // First 6 bans
-  { type: "ban", side: "Blue" }, // B1
-  { type: "ban", side: "Red" },  // R1
-  { type: "ban", side: "Blue" }, // B2
-  { type: "ban", side: "Red" },  // R2
-  { type: "ban", side: "Blue" }, // B3
-  { type: "ban", side: "Red" },  // R3
+  // Early bans
+  { type: "ban", side: "Blue" },
+  { type: "ban", side: "Red" },
+  { type: "ban", side: "Blue" },
+  { type: "ban", side: "Red" },
+  { type: "ban", side: "Blue" },
+  { type: "ban", side: "Red" },
 
-  // Picks
-  { type: "pick", side: "Blue", phase: "B1" },
-  { type: "pick", side: "Red", phase: "R12" },
-  { type: "pick", side: "Red", phase: "R12" },
-  { type: "pick", side: "Blue", phase: "B23" },
-  { type: "pick", side: "Blue", phase: "B23" },
-  { type: "pick", side: "Red", phase: "R3" },
-  { type: "pick", side: "Red", phase: "R4" },
-  { type: "pick", side: "Blue", phase: "B45" },
-  { type: "pick", side: "Blue", phase: "B45" },
-  { type: "pick", side: "Red", phase: "R5" },
+  // Early picks
+  { type: "pick", side: "Blue" },       // B1
+  { type: "pick", side: "Red" },        // R1
+  { type: "pick", side: "Red" },        // R2
+  { type: "pick", side: "Blue" },       // B2
+  { type: "pick", side: "Blue" },       // B3
+  { type: "pick", side: "Red" },        // R3
 
-  // Remaining 4 bans (B4, R4, B5, R5)
-  { type: "ban", side: "Red" },  // R4
-  { type: "ban", side: "Blue" }, // B4
-  { type: "ban", side: "Red" },  // R5
-  { type: "ban", side: "Blue" }  // B5
+  // Late bans (after R3)
+  { type: "ban", side: "Red" },         // R4 ban
+  { type: "ban", side: "Blue" },        // B4 ban
+  { type: "ban", side: "Red" },         // R5 ban
+  { type: "ban", side: "Blue" },        // B5 ban
+
+  // Late picks
+  { type: "pick", side: "Red" },        // R4 pick
+  { type: "pick", side: "Blue" },       // B4 pick
+  { type: "pick", side: "Blue" },       // B5 pick
+  { type: "pick", side: "Red" }         // R5 pick
 ];
 
-/* ================= INIT ================= */
+let simPickPhase = false;
+let simPicksRemaining = 0;
 
 window.onload = () => {
   renderHeroPool();
@@ -45,52 +48,7 @@ window.onload = () => {
   startTimer(true);
 };
 
-/* ================= TIMER ================= */
-
-function startTimer(reset = true) {
-  clearInterval(interval);
-
-  if (reset) timer = 50;
-  document.getElementById("timer").innerText = timer;
-
-  interval = setInterval(() => {
-    timer--;
-    document.getElementById("timer").innerText = timer;
-
-    if (timer <= 0) {
-      clearInterval(interval);
-      autoResolve();
-    }
-  }, 1000);
-}
-
-/* ================= AUTO RESOLVE ================= */
-
-function autoResolve() {
-  const current = draftOrder[step];
-  if (!current) return;
-
-  // ---- BAN ----
-  if (current.type === "ban") {
-    addSkippedBan(current.side);
-    step++;
-    updateTurn();
-    startTimer(true);
-    return;
-  }
-
-  // ---- PICK PHASE ----
-  const phase = current.phase;
-
-  while (draftOrder[step] && draftOrder[step].phase === phase) {
-    const available = getAvailableHeroes();
-    if (!available.length) break;
-    forceSelect(randomHero(available), false);
-  }
-}
-
 /* ================= HERO POOL ================= */
-
 function renderHeroPool() {
   const grid = document.getElementById("heroGrid");
   grid.innerHTML = "";
@@ -112,14 +70,13 @@ function renderHeroPool() {
 
     btn.appendChild(img);
     btn.appendChild(name);
-    btn.onclick = () => selectHero(hero);
 
+    btn.onclick = () => selectHero(hero, btn);
     grid.appendChild(btn);
   });
 }
 
 /* ================= ROLE FILTER ================= */
-
 function setRoleFilter(role) {
   selectedRole = role;
   renderHeroPool();
@@ -127,54 +84,119 @@ function setRoleFilter(role) {
 
 function matchesRoleFilter(hero) {
   if (selectedRole === "All") return true;
-  return hero.roles?.includes(selectedRole);
+  if (hero.role && hero.role === selectedRole) return true;
+  if (hero.roles && hero.roles.includes(selectedRole)) return true;
+  return false;
 }
 
-/* ================= SELECTION ================= */
+/* ================= TIMER ================= */
+function startTimer(reset = true) {
+  clearInterval(interval);
+  if (reset) timer = 50;
+  document.getElementById("timer").innerText = timer;
 
-function selectHero(hero) {
-  if (isHeroLocked(hero.name)) return;
-  forceSelect(hero, true);
+  interval = setInterval(() => {
+    timer--;
+    document.getElementById("timer").innerText = timer;
+
+    if (timer <= 0) {
+      clearInterval(interval);
+      autoResolve();
+    }
+  }, 1000);
 }
 
-function forceSelect(hero, allowTimerReset) {
+/* ================= AUTO RESOLVE ================= */
+function autoResolve() {
   const current = draftOrder[step];
   if (!current) return;
 
-  // ---- BAN ----
-  if (current.type === "ban") {
-    bans.push({ hero: hero.name, side: current.side });
-    addIcon(current.side, hero.icon, true);
+  if (current.type === "pick") {
+    // Check if this is a simultaneous pick phase
+    if (isSimultaneousPick(step)) {
+      if (!simPickPhase) {
+        simPickPhase = true;
+        simPicksRemaining = 2;
+      }
 
+      const available = getAvailableHeroes();
+      if (available.length > 0) {
+        forceSelect(randomHero(available), false);
+        simPicksRemaining--;
+      }
+
+      if (simPicksRemaining > 0) {
+        // continue timer countdown for remaining pick
+        startTimer(false);
+      } else {
+        // Phase complete
+        simPickPhase = false;
+        simPicksRemaining = 0;
+        step += 2; // move past both simultaneous picks
+        updateTurn();
+        startTimer(true);
+      }
+    } else {
+      const available = getAvailableHeroes();
+      if (available.length > 0) {
+        forceSelect(randomHero(available));
+      }
+    }
+
+  } else {
+    // Ban phase skipped
+    addSkippedBan(current.side);
     step++;
     updateTurn();
-    startTimer(true);
-    renderHeroPool();
-    return;
-  }
-
-  // ---- PICK ----
-  picks.push({
-    hero: hero.name,
-    side: current.side,
-    lane: hero.lanes[0]
-  });
-  addIcon(current.side, hero.icon, false);
-
-  const prevPhase = current.phase;
-  step++;
-
-  updateTurn();
-  renderHeroPool();
-
-  const nextPhase = draftOrder[step]?.phase;
-  if (nextPhase && nextPhase !== prevPhase) {
     startTimer(true);
   }
 }
 
-/* ================= HELPERS ================= */
+function isSimultaneousPick(stepIndex) {
+  const cur = draftOrder[stepIndex];
+  const next = draftOrder[stepIndex + 1];
+  return (
+    cur &&
+    next &&
+    cur.type === "pick" &&
+    next.type === "pick" &&
+    cur.side === next.side
+  );
+}
 
+/* ================= SELECTION ================= */
+function selectHero(hero, btn) {
+  if (btn.classList.contains("locked")) return;
+  clearInterval(interval);
+  forceSelect(hero);
+}
+
+function forceSelect(hero, restartTimer = true) {
+  const current = draftOrder[step];
+  if (!current) return;
+
+  const playedLane = hero.lanes[0];
+
+  if (current.type === "ban") {
+    bans.push({ hero: hero.name, side: current.side });
+    addIcon(current.side, hero.icon, true);
+    step++;
+    updateTurn();
+    startTimer(true);
+  } else {
+    picks.push({ hero: hero.name, side: current.side, lane: playedLane });
+    addIcon(current.side, hero.icon, false);
+
+    if (!simPickPhase || simPicksRemaining === 0) step++;
+
+    updateTurn();
+    if (restartTimer && !simPickPhase) startTimer(true);
+  }
+
+  renderHeroPool();
+}
+
+/* ================= HELPERS ================= */
 function getAvailableHeroes() {
   return heroes.filter(h => !isHeroLocked(h.name));
 }
@@ -190,7 +212,6 @@ function randomHero(list) {
 function addIcon(side, icon, isBan) {
   const div = document.createElement("div");
   div.className = isBan ? "banIcon" : "pickIcon";
-
   const img = document.createElement("img");
   img.src = icon;
   div.appendChild(img);
@@ -206,87 +227,112 @@ function addIcon(side, icon, isBan) {
 function addSkippedBan(side) {
   const div = document.createElement("div");
   div.className = "banIcon skipped";
-
   const id = side === "Blue" ? "blueBans" : "redBans";
   document.getElementById(id).appendChild(div);
 }
 
 /* ================= TURN ================= */
-
 function updateTurn() {
-  if (picks.length === 10) {
-    clearInterval(interval);
+  if (
+    picks.filter(p => p.side === "Blue").length === 5 &&
+    picks.filter(p => p.side === "Red").length === 5 &&
+    bans.filter(b => b.side === "Blue").length === 5 &&
+    bans.filter(b => b.side === "Red").length === 5
+  ) {
     document.getElementById("turnIndicator").innerText = "Draft Complete!";
     document.getElementById("analyzeBtn").disabled = false;
+    clearInterval(interval);
     return;
   }
 
   const c = draftOrder[step];
-  if (!c) return;
-
-  document.getElementById("turnIndicator").innerText =
-    `${c.side} Team — ${c.type.toUpperCase()}`;
+  if (c) {
+    document.getElementById("turnIndicator").innerText =
+      `${c.side} Team — ${c.type.toUpperCase()}`;
+  }
 }
 
-/* ================= LANE + META ================= */
-
-function getMissingLanes(teamHeroes) {
+/* ================= LANE COVERAGE ANALYTICS ================= */
+function checkLaneCoverage(teamPicks) {
   const lanes = ["Exp", "Jungle", "Mid", "Roam", "Gold"];
-  const covered = new Set();
+  const assigned = new Set();
 
-  teamHeroes.forEach(name => {
-    const hero = heroes.find(h => h.name === name);
-    hero?.lanes.forEach(l => covered.add(l));
-  });
+  for (let heroName of teamPicks) {
+    const hero = heroes.find(h => h.name === heroName);
+    if (!hero || !hero.lanes) continue;
+    for (let lane of hero.lanes) {
+      if (!assigned.has(lane)) {
+        assigned.add(lane);
+        break;
+      }
+    }
+  }
 
-  return lanes.filter(l => !covered.has(l));
+  return assigned;
 }
 
+/* ================= METATIER SCORING ================= */
 function calculateMetaScore(side) {
-  const team = picks.filter(p => p.side === side);
-  const lanes = ["Exp", "Jungle", "Mid", "Roam", "Gold"];
+  const teamPicks = picks.filter(p => p.side === side);
   let score = 0;
+  const laneBestScore = {};
+  const allLanes = ["Exp", "Jungle", "Mid", "Roam", "Gold"];
 
-  lanes.forEach(lane => {
-    let best = 0;
+  allLanes.forEach(lane => {
+    let bestScoreForLane = 0;
 
-    team.forEach(p => {
-      const hero = heroes.find(h => h.name === p.hero);
-      if (!hero || !hero.lanes.includes(lane)) return;
+    teamPicks.forEach(pick => {
+      const hero = heroes.find(h => h.name === pick.hero);
+      if (!hero || !hero.metaTier) return;
+      if (!hero.lanes.includes(lane)) return;
 
-      const s =
-        hero.metaTier === "S" ? 10 :
-        hero.metaTier === "A" ? 8 :
-        hero.metaTier === "B" ? 6 :
-        hero.metaTier === "Situational" ? 4 : 2;
+      let heroScore = 0;
+      switch (hero.metaTier) {
+        case "S": heroScore = 10; break;
+        case "A": heroScore = 8; break;
+        case "B": heroScore = 6; break;
+        case "Situational": heroScore = 4; break;
+        case "F": heroScore = 2; break;
+      }
 
-      if (s > best) best = s;
+      if (heroScore > bestScoreForLane) bestScoreForLane = heroScore;
     });
 
-    score += best;
+    if (bestScoreForLane > 0) laneBestScore[lane] = bestScoreForLane;
   });
 
+  for (let l in laneBestScore) score += laneBestScore[l];
   return score;
 }
 
 /* ================= ANALYSIS ================= */
-
 function analyzeDraft() {
   const blueHeroes = picks.filter(p => p.side === "Blue").map(p => p.hero);
   const redHeroes = picks.filter(p => p.side === "Red").map(p => p.hero);
 
-  let blueScore = calculateMetaScore("Blue");
-  let redScore = calculateMetaScore("Red");
+  const blueCoverage = checkLaneCoverage(blueHeroes);
+  const redCoverage = checkLaneCoverage(redHeroes);
 
-  const blueMissing = getMissingLanes(blueHeroes);
-  const redMissing = getMissingLanes(redHeroes);
+  let blueScore = 0;
+  let redScore = 0;
 
-  if (blueMissing.length === 0) blueScore += 10;
-  if (redMissing.length === 0) redScore += 10;
+  // Lane completion bonus
+  blueScore += blueCoverage.size === 5 ? 10 : 0;
+  redScore += redCoverage.size === 5 ? 10 : 0;
 
-  document.getElementById("result").innerText =
-    `Blue Team Score: ${blueScore}` +
-    (blueMissing.length ? `\nMissing lanes: ${blueMissing.join(", ")}` : "") +
-    `\n\nRed Team Score: ${redScore}` +
-    (redMissing.length ? `\nMissing lanes: ${redMissing.join(", ")}` : "");
+  // Meta tier scoring
+  blueScore += calculateMetaScore("Blue");
+  redScore += calculateMetaScore("Red");
+
+  // Display missing lanes if any
+  const missingBlue = ["Exp","Jungle","Mid","Roam","Gold"].filter(l => !blueCoverage.has(l));
+  const missingRed = ["Exp","Jungle","Mid","Roam","Gold"].filter(l => !redCoverage.has(l));
+
+  let resultText =
+    `Blue Team Score: ${blueScore}\nRed Team Score: ${redScore}\n`;
+
+  if (missingBlue.length > 0) resultText += `Blue missing lanes: ${missingBlue.join(", ")}\n`;
+  if (missingRed.length > 0) resultText += `Red missing lanes: ${missingRed.join(", ")}`;
+
+  document.getElementById("result").innerText = resultText;
 }
