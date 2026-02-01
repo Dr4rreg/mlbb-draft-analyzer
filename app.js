@@ -36,6 +36,10 @@ const draftOrder = [
 let simPickPhase = false;
 let simPicksRemaining = 0;
 
+// create heroMap for fast lookup
+const heroMap = {};
+heroes.forEach(h => heroMap[h.name] = h);
+
 window.onload = () => {
   renderHeroPool();
   updateTurn();
@@ -232,17 +236,33 @@ function assignHeroesToLanes(teamPicks) {
   const laneAssignment = {};
   const remainingLanes = new Set(allLanes);
 
-  // Sort heroes by MetaTier descending
+  // Sort heroes by fewest lane options first, then by metaTier
   const sortedPicks = teamPicks
     .map(p => ({ ...p, tierValue: metaTierValue(p.hero) }))
-    .sort((a, b) => b.tierValue - a.tierValue);
+    .sort((a, b) => {
+      const laneDiff = heroMap[a.hero].lanes.length - heroMap[b.hero].lanes.length;
+      return laneDiff !== 0 ? laneDiff : b.tierValue - a.tierValue;
+    });
 
   for (let pick of sortedPicks) {
-    const hero = heroes.find(h => h.name === pick.hero);
+    const hero = heroMap[pick.hero];
     if (!hero) continue;
 
     // Find first available lane from hero's possible lanes
-    const lane = hero.lanes.find(l => remainingLanes.has(l));
+    let lane = hero.lanes.find(l => remainingLanes.has(l));
+
+    // If no lane free, try to replace lower meta hero
+    if (!lane) {
+      for (let l of hero.lanes) {
+        const currentHero = laneAssignment[l];
+        if (currentHero && metaTierValue(hero.name) > metaTierValue(currentHero.name)) {
+          lane = l;
+          remainingLanes.add(l);
+          break;
+        }
+      }
+    }
+
     if (lane) {
       laneAssignment[lane] = hero;
       remainingLanes.delete(lane);
@@ -253,7 +273,7 @@ function assignHeroesToLanes(teamPicks) {
 }
 
 function metaTierValue(heroName) {
-  const hero = heroes.find(h => h.name === heroName);
+  const hero = heroMap[heroName];
   if (!hero) return 0;
   switch (hero.metaTier) {
     case "S": return 5;
@@ -266,8 +286,8 @@ function metaTierValue(heroName) {
 }
 
 /* ================= LANE COVERAGE ================= */
-function checkLaneCoverage(teamPicks) {
-  const assignment = assignHeroesToLanes(teamPicks.map(p => ({ hero: p })));
+function checkLaneCoverage(heroNames) {
+  const assignment = assignHeroesToLanes(heroNames.map(h => ({ hero: h })));
   return Object.keys(assignment).length === 5;
 }
 
@@ -277,21 +297,16 @@ function calculateMetaScore(side) {
   const assignment = assignHeroesToLanes(teamPicks);
 
   let score = 0;
-  const laneBestScore = {};
-
-  Object.entries(assignment).forEach(([lane, hero]) => {
-    let heroScore = 0;
+  Object.values(assignment).forEach(hero => {
     switch (hero.metaTier) {
-      case "S": heroScore = 10; break;
-      case "A": heroScore = 8; break;
-      case "B": heroScore = 6; break;
-      case "Situational": heroScore = 4; break;
-      case "F": heroScore = 2; break;
+      case "S": score += 10; break;
+      case "A": score += 8; break;
+      case "B": score += 6; break;
+      case "Situational": score += 4; break;
+      case "F": score += 2; break;
     }
-    laneBestScore[lane] = heroScore;
   });
 
-  for (let l in laneBestScore) score += laneBestScore[l];
   return score;
 }
 
@@ -304,14 +319,13 @@ function calculateEarlyLate(side) {
   let lateScore = 0;
 
   Object.values(assignment).forEach(hero => {
-    earlyMidScore += hero.earlyMid || 0;
-    lateScore += hero.late || 0;
+    earlyMidScore += hero.earlyMidGame || 0;
+    lateScore += hero.lateGame || 0;
   });
 
-  const count = Object.values(assignment).length;
   return {
-    earlyMid: count ? (earlyMidScore / count) : 0,
-    late: count ? (lateScore / count) : 0
+    earlyMid: earlyMidScore,
+    late: lateScore
   };
 }
 
@@ -336,6 +350,6 @@ function analyzeDraft() {
   redScore += redEarlyLate.earlyMid + redEarlyLate.late;
 
   document.getElementById("result").innerText =
-    `Blue Team Score: ${blueScore} (Early/Mid: ${blueEarlyLate.earlyMid.toFixed(1)}, Late: ${blueEarlyLate.late.toFixed(1)})\n` +
-    `Red Team Score: ${redScore} (Early/Mid: ${redEarlyLate.earlyMid.toFixed(1)}, Late: ${redEarlyLate.late.toFixed(1)})`;
+    `Blue Team Score: ${blueScore} (Early/Mid: ${blueEarlyLate.earlyMid}, Late: ${blueEarlyLate.late})\n` +
+    `Red Team Score: ${redScore} (Early/Mid: ${redEarlyLate.earlyMid}, Late: ${redEarlyLate.late})`;
 }
