@@ -4,7 +4,7 @@
 let step = 0;
 let timer = 50;
 let interval = null;
-let sharedTimerActive = false;
+let currentBlock = null;
 
 let selectedRole = "All";
 
@@ -12,7 +12,7 @@ const picks = [];
 const bans = [];
 
 /***********************
- * DRAFT ORDER (MPL)
+ * DRAFT ORDER
  ***********************/
 const draftOrder = [
   { type: "ban", side: "Blue" },
@@ -50,62 +50,12 @@ window.onload = () => {
 };
 
 /***********************
- * HERO POOL
- ***********************/
-function renderHeroPool() {
-  const grid = document.getElementById("heroGrid");
-  grid.innerHTML = "";
-
-  heroes.forEach(hero => {
-    if (!matchesRoleFilter(hero)) return;
-
-    const btn = document.createElement("button");
-    btn.className = "heroBtn";
-
-    if (isHeroLocked(hero.name)) {
-      btn.classList.add("locked");
-    }
-
-    const img = document.createElement("img");
-    img.src = hero.icon;
-
-    const name = document.createElement("div");
-    name.className = "heroName";
-    name.innerText = hero.name;
-
-    btn.appendChild(img);
-    btn.appendChild(name);
-
-    btn.onclick = () => selectHero(hero, btn);
-    grid.appendChild(btn);
-  });
-}
-
-/***********************
- * ROLE FILTER
- ***********************/
-function setRoleFilter(role) {
-  selectedRole = role;
-  renderHeroPool();
-}
-
-function matchesRoleFilter(hero) {
-  if (selectedRole === "All") return true;
-  if (hero.role === selectedRole) return true;
-  if (hero.roles && hero.roles.includes(selectedRole)) return true;
-  return false;
-}
-
-/***********************
  * TIMER
  ***********************/
-function startTimer(reset = true) {
+function startTimer(reset) {
   clearInterval(interval);
 
-  if (reset) {
-    timer = 50;
-  }
-
+  if (reset) timer = 50;
   document.getElementById("timer").innerText = timer;
 
   interval = setInterval(() => {
@@ -120,44 +70,25 @@ function startTimer(reset = true) {
 }
 
 /***********************
- * SIMULTANEOUS PICK LOGIC
+ * PICK BLOCK LOGIC (KEY FIX)
  ***********************/
-function isSimultaneousPick(stepIndex) {
+function getPickBlock(stepIndex) {
   const cur = draftOrder[stepIndex];
   const next = draftOrder[stepIndex + 1];
 
-  return (
-    cur &&
-    next &&
-    cur.type === "pick" &&
-    next.type === "pick" &&
+  if (
+    cur?.type === "pick" &&
+    next?.type === "pick" &&
     cur.side === next.side
-  );
-}
-
-function leavingSimultaneousPick(prevStep) {
-  return (
-    !isSimultaneousPick(prevStep) &&
-    !isSimultaneousPick(prevStep - 1)
-  );
-}
-
-/***********************
- * AUTO RESOLVE
- ***********************/
-function autoResolve() {
-  const current = draftOrder[step];
-  if (!current) return;
-
-  if (current.type === "pick") {
-    forceSelect(randomHero(getAvailableHeroes()));
-  } else {
-    addSkippedBan(current.side);
-    step++;
+  ) {
+    return `${cur.side}-DOUBLE`;
   }
 
-  updateTurn();
-  startTimer(true);
+  if (cur?.type === "pick") {
+    return `${cur.side}-SINGLE`;
+  }
+
+  return "OTHER";
 }
 
 /***********************
@@ -183,24 +114,59 @@ function forceSelect(hero) {
     addIcon(current.side, hero.icon, false);
   }
 
-  const prevStep = step;
+  const prevBlock = currentBlock;
   step++;
+  currentBlock = getPickBlock(step);
 
-  const enteringSimul = isSimultaneousPick(prevStep);
-  const exitingSimul = leavingSimultaneousPick(prevStep);
-
-  if (enteringSimul && !sharedTimerActive) {
-    sharedTimerActive = true;
-    startTimer(false);
-  } else if (sharedTimerActive && !exitingSimul) {
-    startTimer(false);
-  } else {
-    sharedTimerActive = false;
-    startTimer(true);
-  }
+  const resetTimer = prevBlock !== currentBlock;
+  startTimer(resetTimer);
 
   updateTurn();
   renderHeroPool();
+}
+
+/***********************
+ * AUTO RESOLVE
+ ***********************/
+function autoResolve() {
+  const cur = draftOrder[step];
+  if (!cur) return;
+
+  if (cur.type === "pick") {
+    forceSelect(randomHero(getAvailableHeroes()));
+  } else {
+    addSkippedBan(cur.side);
+    step++;
+    currentBlock = getPickBlock(step);
+    startTimer(true);
+    updateTurn();
+  }
+}
+
+/***********************
+ * HERO POOL
+ ***********************/
+function renderHeroPool() {
+  const grid = document.getElementById("heroGrid");
+  grid.innerHTML = "";
+
+  heroes.forEach(hero => {
+    const btn = document.createElement("button");
+    btn.className = "heroBtn";
+
+    if (isHeroLocked(hero.name)) btn.classList.add("locked");
+
+    const img = document.createElement("img");
+    img.src = hero.icon;
+
+    const name = document.createElement("div");
+    name.className = "heroName";
+    name.innerText = hero.name;
+
+    btn.append(img, name);
+    btn.onclick = () => selectHero(hero, btn);
+    grid.appendChild(btn);
+  });
 }
 
 /***********************
@@ -211,10 +177,7 @@ function getAvailableHeroes() {
 }
 
 function isHeroLocked(name) {
-  return (
-    picks.some(p => p.hero === name) ||
-    bans.some(b => b.hero === name)
-  );
+  return picks.some(p => p.hero === name) || bans.some(b => b.hero === name);
 }
 
 function randomHero(list) {
@@ -224,7 +187,6 @@ function randomHero(list) {
 function addIcon(side, icon, isBan) {
   const div = document.createElement("div");
   div.className = isBan ? "banIcon" : "pickIcon";
-
   const img = document.createElement("img");
   img.src = icon;
   div.appendChild(img);
@@ -240,13 +202,11 @@ function addIcon(side, icon, isBan) {
 function addSkippedBan(side) {
   const div = document.createElement("div");
   div.className = "banIcon skipped";
-
-  const id = side === "Blue" ? "blueBans" : "redBans";
-  document.getElementById(id).appendChild(div);
+  document.getElementById(side === "Blue" ? "blueBans" : "redBans").appendChild(div);
 }
 
 /***********************
- * TURN INDICATOR
+ * TURN
  ***********************/
 function updateTurn() {
   if (
@@ -264,64 +224,4 @@ function updateTurn() {
     document.getElementById("turnIndicator").innerText =
       `${c.side} Team — ${c.type.toUpperCase()}`;
   }
-}
-
-/***********************
- * LANE COVERAGE + MISSING LANES
- ***********************/
-function getMissingLanes(teamHeroes) {
-  const lanes = ["Exp", "Jungle", "Mid", "Roam", "Gold"];
-  const covered = new Set();
-
-  teamHeroes.forEach(heroName => {
-    const hero = heroes.find(h => h.name === heroName);
-    hero?.lanes?.forEach(l => covered.add(l));
-  });
-
-  return lanes.filter(l => !covered.has(l));
-}
-
-/***********************
- * META SCORING (FLEX-SAFE)
- ***********************/
-function calculateMetaScore(side) {
-  const teamPicks = picks.filter(p => p.side === side);
-  const laneBest = {};
-
-  teamPicks.forEach(pick => {
-    const hero = heroes.find(h => h.name === pick.hero);
-    if (!hero) return;
-
-    hero.lanes.forEach(lane => {
-      const score =
-        hero.metaTier === "S" ? 10 :
-        hero.metaTier === "A" ? 8 :
-        hero.metaTier === "B" ? 6 :
-        hero.metaTier === "Situational" ? 4 : 2;
-
-      if (!laneBest[lane] || laneBest[lane] < score) {
-        laneBest[lane] = score;
-      }
-    });
-  });
-
-  return Object.values(laneBest).reduce((a, b) => a + b, 0);
-}
-
-/***********************
- * ANALYSIS
- ***********************/
-function analyzeDraft() {
-  const blueHeroes = picks.filter(p => p.side === "Blue").map(p => p.hero);
-  const redHeroes = picks.filter(p => p.side === "Red").map(p => p.hero);
-
-  const blueMissing = getMissingLanes(blueHeroes);
-  const redMissing = getMissingLanes(redHeroes);
-
-  const blueScore = calculateMetaScore("Blue");
-  const redScore = calculateMetaScore("Red");
-
-  document.getElementById("result").innerText =
-    `Blue Score: ${blueScore}\nMissing: ${blueMissing.join(", ") || "None"}\n\n` +
-    `Red Score: ${redScore}\nMissing: ${redMissing.join(", ") || "None"}`;
 }
