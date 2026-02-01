@@ -169,3 +169,12 @@ h1 {
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+.pickIcon, .banIcon {
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+
+.pickIcon.show, .banIcon.show {
+  opacity: 1;
+}
